@@ -4,6 +4,7 @@ import { HttpFetcher, Fetcher } from '@project/common';
 import { AnkiSettings, AnkiSettingsFieldKey } from '@project/common/settings';
 import sanitize from 'sanitize-filename';
 import { extractText, sourceString } from '@project/common/util';
+import { getBasicFormFromText } from "@project/common/japanese-tokenizer/tokenizer"
 
 declare global {
     interface String {
@@ -154,6 +155,88 @@ export async function exportCard(card: CardModel, ankiSettings: AnkiSettings, ex
     });
 }
 
+const storage = chrome.storage.local;
+
+async function getSavedKnownWord() {
+    const val = await storage.get(["knownWords"])
+    .then((result)=>{
+        return result.knownWords;
+    });
+
+    if (val == null) {
+        return undefined;
+    }
+
+    return JSON.parse(val) as string[]; 
+} 
+
+async function SaveNewKnownWord(knownWords: string[]) {
+    let alreadyKnownWords: string[] = await getSavedKnownWord() ?? [];
+
+    alreadyKnownWords.push(...knownWords);
+
+    await storage.set({knownWords:JSON.stringify(alreadyKnownWords)});
+} 
+
+export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettings) {
+    let knownWords: string[] = [];
+
+    // first step is to separate the text in words -> japanese tokenizer
+    let basic_form = await getBasicFormFromText(text);
+    basic_form = [...new Set(basic_form)];
+
+    // we'll chech in the already saved known words list
+    const alreadyKnownWords: string[] = await getSavedKnownWord() ?? [];
+
+    for (const word of basic_form){
+        if (alreadyKnownWords.includes(word)){
+            knownWords.push(word);
+        }
+    }
+
+    //remove them from basic_form so we don't make useless request
+
+    basic_form = basic_form.filter((e) => !knownWords.includes(e));
+
+    //once we have the basic form we need to find the word in Anki
+    const anki = new Anki(ankiSettings);
+    
+    let cards: {word: string; id:number;}[] = [];
+    let cardPromises : Promise<{word: string; id:number;}>[] = [];
+    
+    for (const word of basic_form) {
+        cardPromises.push(anki.findNotesWithWord(word).then((id)=>{return {word:word, id: id[0]} as {word: string; id:number;}}))
+    }
+
+
+    await Promise.all(cardPromises)
+    .then((data) => {
+        for (const card of data ) {
+            cards.push(card);
+        }
+    })
+
+    //once we have the word we need to check if the interval is > that 1 days
+    //return negative when seconds and positive if days so if we do > than 1 that will work
+
+    let cardIds = cards.map((card) => {return card.id})
+    let intervals: number[] = await anki.getInterval(cardIds) ;
+
+
+    let knownWordsToSave : string[] = [];
+
+    for (let i = 0; i < intervals.length; i++) {
+        if (intervals[i] > 1) {
+            knownWords.push(cards[i].word);
+            knownWordsToSave.push(cards[i].word);
+        }
+    }
+
+    await SaveNewKnownWord(knownWordsToSave);
+
+    return knownWords;
+}
+
 export class Anki {
     private readonly settingsProvider: AnkiSettings;
     private readonly fetcher: Fetcher;
@@ -185,6 +268,26 @@ export class Anki {
             ankiConnectUrl
         );
         return response.result;
+    }
+
+    async findNotes(word: string, ankiConnectUrl?: string) {
+        const response = await this._executeAction(
+            'findNotes',
+            { query: this._escapeQuery(word) },
+            ankiConnectUrl
+        );
+        return response.result;
+    }
+
+    async getInterval(cardIds: number[], ankiConnectUrl?: string) {
+        const response = await this._executeAction(
+            'getIntervals',
+            {
+                cards: cardIds
+            },
+            ankiConnectUrl
+        )
+        return response.result
     }
 
     async findNotesWithWordGui(word: string, ankiConnectUrl?: string) {

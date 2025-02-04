@@ -148,6 +148,11 @@ export interface PublishCardMessage extends Message, CardModel {
     readonly command: 'publish-card';
 }
 
+export interface FindKnownWordsMessage extends Message {
+    readonly command: 'find-known-words';
+    readonly text: string;
+}
+
 export interface CopyToVideoMessage extends Message, CardTextFieldValues {
     readonly command: 'copy';
     readonly postMineAction: PostMineAction;

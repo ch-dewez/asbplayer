@@ -1,5 +1,5 @@
 import { SettingsProvider, ankiSettingsKeys } from '@project/common/settings';
-import { LoadSubtitlesCommand, MineSubtitleCommand, WebSocketClient } from '@project/common/web-socket-client';
+import { findKnownWordsCommand, LoadSubtitlesCommand, MineSubtitleCommand, WebSocketClient } from '@project/common/web-socket-client';
 import TabRegistry from './tab-registry';
 import {
     CopySubtitleMessage,
@@ -124,6 +124,28 @@ export const bindWebSocketClient = async (settings: SettingsProvider, tabRegistr
             return toggleVideoSelectCommand;
         });
     };
+    client.onFindKnownWords = async (command:findKnownWordsCommand)=> {
+        let knownWords:string[] = [];
+        const text = command.body.text;
+        chrome.runtime.sendMessage(
+            {
+                sender: 'asbplayer-extension-to-video',
+                message: {
+                    command: 'find-known-words',
+                    text,
+                },
+            },
+            (response) => {
+                if (response.error) {
+                    console.error(response.error);
+                } else {
+                    knownWords = response.knownWords.join(' ');
+                }
+            }
+        )
+
+        return knownWords;
+    }
 };
 
 export const unbindWebSocketClient = () => {

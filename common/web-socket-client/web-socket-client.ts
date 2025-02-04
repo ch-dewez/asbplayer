@@ -32,6 +32,18 @@ export interface LoadSubtitlesCommand {
     };
 }
 
+export interface findKnownWordsCommand {
+    command: 'find-known-words';
+    messageId: string;
+    body: {
+        text: string;
+    };
+}
+
+interface findKnownWordsResponseBody {
+    knownWords: string[];
+}
+
 export class WebSocketClient {
     private _socket?: WebSocket;
     private _pingInterval?: NodeJS.Timeout;
@@ -41,6 +53,7 @@ export class WebSocketClient {
     private _connectPromise?: { resolve: (value: unknown) => void; reject: (error: any) => void };
     onMineSubtitle?: (command: MineSubtitleCommand) => Promise<boolean>;
     onLoadSubtitles?: (command: LoadSubtitlesCommand) => Promise<void>;
+    onFindKnownWords?: (command: findKnownWordsCommand) => Promise<string[]>;
 
     get socket() {
         return this._socket;
@@ -107,6 +120,15 @@ export class WebSocketClient {
                             command: 'response',
                             messageId,
                             body: {},
+                        };
+                        this._socket?.send(JSON.stringify(response));
+                    }else if (payload.command === 'find-known-words'){
+                        const messageId = payload.messageId;
+                        const knownWords = (await this.onFindKnownWords?.(payload)) ?? [];
+                        const response: Response<findKnownWordsResponseBody> = {
+                            command: 'response',
+                            messageId,
+                            body: { knownWords },
                         };
                         this._socket?.send(JSON.stringify(response));
                     }
