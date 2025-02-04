@@ -40,8 +40,6 @@ import CopyHistory from './CopyHistory';
 import LandingPage from './LandingPage';
 import Player, { MediaSources } from './Player';
 import SettingsDialog from './SettingsDialog';
-import TokenizerDialog from './tokenizerDialog';
-import KnownWordsDialog from './knownWordsDialog';
 import VideoPlayer, { SeekRequest } from './VideoPlayer';
 import { Color } from '@material-ui/lab';
 import VideoChannel from '../services/video-channel';
@@ -287,8 +285,6 @@ function App({
     const [ankiDialogCard, setAnkiDialogCard] = useState<CardModel>();
     const miningContext = useMemo(() => new MiningContext(), []);
     const [settingsDialogOpen, setSettingsDialogOpen] = useState<boolean>(false);
-    const [tokenizerDialogOpen, setTokenizerDialogOpen] = useState<boolean>(false);
-    const [knownWordsDialogOpen, setKnownWordsDialogOpen] = useState<boolean>(false);
     const [settingsDialogScrollToId, setSettingsDialogScrollToId] = useState<string>();
     const [disableKeyEvents, setDisableKeyEvents] = useState<boolean>(false);
     const [tab, setTab] = useState<VideoTabModel>();
@@ -522,14 +518,6 @@ function App({
     const handleOpenSettings = useCallback(() => {
         setDisableKeyEvents(true);
         setSettingsDialogOpen(true);
-    }, []);
-    const handleOpenTokenizer = useCallback(() => {
-        setDisableKeyEvents(true);
-        setTokenizerDialogOpen(true);
-    }, []);
-    const handleOpenKnownWords = useCallback(() => {
-        setDisableKeyEvents(true);
-        setKnownWordsDialogOpen(true);
     }, []);
     const handleAlertClosed = useCallback(() => setAlertOpen(false), []);
     const handleCloseSettings = useCallback(() => {
@@ -1302,15 +1290,6 @@ function App({
                                 {...profilesContext}
                             />
                         )}
-                        <KnownWordsDialog
-                            open={knownWordsDialogOpen}
-                            onClose={() => setKnownWordsDialogOpen(false)}
-                        />
-                        <TokenizerDialog
-                            open={tokenizerDialogOpen}
-                            onClose={() => setTokenizerDialogOpen(false)}
-                        />
-                            
                         <SettingsDialog
                             anki={anki}
                             extension={extension}
@@ -1329,8 +1308,6 @@ function App({
                             subtitleFiles={sources.subtitleFiles}
                             onOpenCopyHistory={handleOpenCopyHistory}
                             onDownloadSubtitleFilesAsSrt={handleDownloadSubtitleFilesAsSrt}
-                            onOpenKnownWords={handleOpenKnownWords}
-                            onOpenTokenizer={handleOpenTokenizer}
                             onOpenSettings={handleOpenSettings}
                         />
                         <input

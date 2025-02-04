@@ -30,8 +30,6 @@ interface BarProps {
     subtitleFiles?: File[];
     onFileSelector?: () => void;
     onDownloadSubtitleFilesAsSrt: () => void;
-    onOpenTokenizer: () => void;
-    onOpenKnownWords: () => void;
     onOpenSettings: () => void;
     onOpenCopyHistory: () => void;
 }
@@ -122,8 +120,6 @@ export default function Bar({
     hidden,
     title,
     subtitleFiles,
-    onOpenTokenizer,
-    onOpenKnownWords,
     onOpenSettings,
     onOpenCopyHistory,
     onDownloadSubtitleFilesAsSrt,
@@ -174,12 +170,6 @@ export default function Bar({
                     <Typography variant="h6" noWrap className={classes.title}>
                         {title}
                     </Typography>
-                    <Button onClick={onOpenKnownWords} color="inherit">
-                        findKnownWords 
-                    </Button>
-                    <Button onClick={onOpenTokenizer} color="inherit">
-                        Japanese Tokenizer
-                    </Button>
                     <IconButton edge="end" color="inherit" onClick={handleMenuOpen}>
                         <GitHubIcon />
                     </IconButton>

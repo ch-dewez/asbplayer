@@ -5,6 +5,7 @@ import { AnkiSettings, AnkiSettingsFieldKey } from '@project/common/settings';
 import sanitize from 'sanitize-filename';
 import { extractText, sourceString } from '@project/common/util';
 import { getBasicFormFromText } from "@project/common/japanese-tokenizer/tokenizer"
+import { useAppKeyBinder } from '../app/hooks/use-app-key-binder';
 
 declare global {
     interface String {
@@ -155,9 +156,13 @@ export async function exportCard(card: CardModel, ankiSettings: AnkiSettings, ex
     });
 }
 
-const storage = chrome.storage.local;
+let storage = typeof chrome !== 'undefined' && chrome.storage ? chrome.storage.local : undefined;
+
 
 async function getSavedKnownWord() {
+    if (!storage) {
+        return undefined;
+    }
     const val = await storage.get(["knownWords"])
     .then((result)=>{
         return result.knownWords;
@@ -171,6 +176,9 @@ async function getSavedKnownWord() {
 } 
 
 async function SaveNewKnownWord(knownWords: string[]) {
+    if (!storage) {
+        return;
+    }
     let alreadyKnownWords: string[] = await getSavedKnownWord() ?? [];
 
     alreadyKnownWords.push(...knownWords);
@@ -205,7 +213,7 @@ export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettin
     let cardPromises : Promise<{word: string; id:number;}>[] = [];
     
     for (const word of basic_form) {
-        cardPromises.push(anki.findNotesWithWord(word).then((id)=>{return {word:word, id: id[0]} as {word: string; id:number;}}))
+        cardPromises.push(anki.findNotes(word).then((id)=>{return {word:word, id: id[0]} as {word: string; id:number;}}))
     }
 
 
