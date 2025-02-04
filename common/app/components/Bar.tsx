@@ -20,7 +20,6 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import Popover from '@material-ui/core/Popover';
-import { Button } from '@material-ui/core';
 
 interface BarProps {
     drawerWidth: number;

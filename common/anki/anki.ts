@@ -210,16 +210,19 @@ export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettin
     const anki = new Anki(ankiSettings);
     
     let cards: {word: string; id:number;}[] = [];
-    let cardPromises : Promise<{word: string; id:number;}>[] = [];
+    let cardPromises: Promise<{ word: string; id: number } | undefined>[] = [];
     
     for (const word of basic_form) {
-        cardPromises.push(anki.findNotes(word).then((id)=>{return {word:word, id: id[0]} as {word: string; id:number;}}))
+        cardPromises.push(anki.findNotesWithFieldContaingWord(word).then((id)=>{if(id.length === 0){return undefined} return {word:word, id: id[0]} }))
     }
 
 
     await Promise.all(cardPromises)
     .then((data) => {
         for (const card of data ) {
+            if (card == undefined) {
+                continue
+            }
             cards.push(card);
         }
     })
@@ -277,6 +280,15 @@ export class Anki {
         );
         return response.result;
     }
+    
+    async findNotesWithFieldContaingWord(word: string, ankiConnectUrl?: string) {
+        const response = await this._executeAction(
+            'findNotes',
+            { query: this.settingsProvider.wordField + ':' + "*"+ this._escapeQuery(word) + "*" },
+            ankiConnectUrl
+        );
+        return response.result;
+    }
 
     async findNotes(word: string, ankiConnectUrl?: string) {
         const response = await this._executeAction(
@@ -319,7 +331,7 @@ export class Anki {
             }
         }
 
-        return `"${escaped}"`;
+        return `${escaped}`;
     }
 
     async requestPermission(ankiConnectUrl?: string) {
