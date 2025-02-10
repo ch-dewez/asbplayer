@@ -139,10 +139,33 @@ export default function SidePanel({ settings, extension }: Props) {
                         const subs = response.subtitles;
                         const length = subs.length > 0 ? subs[subs.length - 1].end : 0;
                         setSyncedVideoElement(lastSyncedVideoTab);
+                        const displaySubs = subs.map((s, index) => ({ ...s, index, displayTime: timeDurationDisplay(s.start, length) } as DisplaySubtitleModel))
                         setSubtitles(
-                            subs.map((s, index) => ({ ...s, index, displayTime: timeDurationDisplay(s.start, length) }))
+                           displaySubs 
                         );
                         setSubtitleFileNames(response.subtitleFileNames);
+                        
+                        chrome.runtime.sendMessage(
+                            {
+                                sender: 'player',
+                                message: {
+                                    command: 'add-annotations',
+                                    // I think sending subs is enough but i'm not 100% sure so i'm sending displaySubs
+                                    subtitles: displaySubs,
+                                },
+                            },
+                            (response) => {
+                            
+                                console.log("response :");
+                                console.log(response);
+                                if (response.error) {
+                                    console.error(response.error);
+                                } else {
+                                    setSubtitles(response.subtitles ?? []);
+                                }
+                            }
+                        );
+
                     }
                 }
             }

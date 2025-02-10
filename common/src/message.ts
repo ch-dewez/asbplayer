@@ -148,9 +148,9 @@ export interface PublishCardMessage extends Message, CardModel {
     readonly command: 'publish-card';
 }
 
-export interface FindKnownWordsMessage extends Message {
+export interface AddAnnotationsMessage extends Message {
     readonly command: 'find-known-words';
-    readonly text: string;
+    readonly subtitles: SubtitleModel[]
 }
 
 export interface CopyToVideoMessage extends Message, CardTextFieldValues {

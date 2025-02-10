@@ -8,6 +8,7 @@ import React, {
     createRef,
     RefObject,
     ReactNode,
+    ReactElement,
 } from 'react';
 import { makeStyles, Theme } from '@material-ui/core/styles';
 import { keysAreEqual } from '../services/util';
@@ -20,6 +21,7 @@ import {
     AutoPauseContext,
     CopySubtitleWithAdditionalFieldsMessage,
     CardTextFieldValues,
+    AnnotationType,
 } from '@project/common';
 import { AsbplayerSettings } from '@project/common/settings';
 import {
@@ -47,6 +49,7 @@ import { MineSubtitleParams } from '../hooks/use-app-web-socket-client';
 import { isMobile } from 'react-device-detect';
 import ChromeExtension, { ExtensionMessage } from '../services/chrome-extension';
 import { MineSubtitleCommand, WebSocketClient } from '../../web-socket-client';
+import { getBasicFormFromText } from '../../japanese-tokenizer/tokenizer';
 
 let lastKnownWidth: number | undefined;
 export const minSubtitlePlayerWidth = 200;
@@ -196,6 +199,56 @@ const useSubtitleRowStyles = makeStyles((theme) => ({
         textAlign: 'right',
         padding: 0,
     },
+    'knownWords': {
+        display: 'inline-block',
+        position: 'relative',
+        verticalAlign: 'baseline',
+        "&:after": {
+
+        content: "\"\"",
+        left: '50%',
+        position: 'absolute',
+        transform: 'translate(-50%)',
+        minHeight: '2px',
+        height: '.1em',
+        width: 'calc(100% - 3px)',
+        bottom: '-1px',
+        backgroundColor: 'rgb(44, 159, 44)'
+        }
+    },
+    'notInDeckWords': {
+        display: 'inline-block',
+        position: 'relative',
+        verticalAlign: 'baseline',
+        "&:after": {
+            
+        content: "\"\"",
+        left: '50%',
+        position: 'absolute',
+        transform: 'translate(-50%)',
+        minHeight: '2px',
+        height: '.1em',
+        width: 'calc(100% - 3px)',
+        bottom: '-1px',
+        backgroundColor: 'rgb(0, 0, 0)'
+        }
+    },
+    'unknownWords': {
+        display: 'inline-block',
+        position: 'relative',
+        verticalAlign: 'baseline',
+        "&:after": {
+        content: "\"\"",
+        left: '50%',
+        position: 'absolute',
+        transform: 'translate(-50%)',
+        minHeight: '2px',
+        height: '.1em',
+        width: 'calc(100% - 3px)',
+        bottom: '-1px',
+        backgroundColor: 'rgb(222, 6, 75)'
+        }
+    }
 }));
 
 export interface DisplaySubtitleModel extends SubtitleModel {
@@ -219,6 +272,51 @@ interface SubtitleRowProps extends TableRowProps {
     onClickSubtitle: (index: number) => void;
     onCopySubtitle: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>, index: number) => void;
 }
+
+interface SubtitleTextWithColorProps  {
+    subtitle:SubtitleModel,
+}
+
+const SubtitleTextWithColor = React.memo(function SubtitleTextWithColor({
+    subtitle,
+}: SubtitleTextWithColorProps) {
+    const classes = useSubtitleRowStyles();
+    const [words, setWords] = useState<ReactElement[]>([]);
+    
+    useEffect(() => {
+        if (!subtitle.annotations || subtitle.annotations.length <= 0){
+            setWords([<span key={subtitle.start}>{subtitle.text}</span>])
+            return;
+        }
+
+        let tempWords:ReactElement[] = []; 
+        
+        for (const annotation of subtitle.annotations){
+            let word = annotation.word;
+            switch (annotation.annotationType) {
+                case (AnnotationType.known) :{
+                    tempWords.push(
+                        <div className={classes['knownWords']} >{word}</div>
+                    )
+                    break;
+                }case (AnnotationType.unknown) :{
+                    tempWords.push(
+                        <div className={classes['unknownWords']}>{word}</div>
+                    )
+                    break; 
+                }case (AnnotationType.notInDeck) :{
+                    tempWords.push(
+                        <div className={classes['notInDeckWords']}>{word}</div>
+                    )
+                    break; 
+                }
+            }
+        }
+
+        setWords(tempWords);
+    }, [subtitle]);
+    return <div key={subtitle.start}>{words}</div>;
+});
 
 const SubtitleRow = React.memo(function SubtitleRow({
     index,
@@ -249,13 +347,17 @@ const SubtitleRow = React.memo(function SubtitleRow({
         setTextSelected(selected ?? false);
     }
 
-    const content = subtitle.textImage ? (
-        <SubtitleTextImage availableWidth={window.screen.availWidth / 2} subtitle={subtitle} scale={1} />
-    ) : (
-        <span ref={textRef} className={disabledClassName}>
-            {subtitle.text}
-        </span>
-    );
+    const content = useMemo<ReactElement>(() => {
+        return (subtitle.textImage ? (
+                //can't add color to this but I guess it's not a problem
+                <SubtitleTextImage availableWidth={window.screen.availWidth / 2} subtitle={subtitle} scale={1} />
+            ) : (
+                <span ref={textRef} className={disabledClassName}>
+                    <SubtitleTextWithColor subtitle={subtitle}></SubtitleTextWithColor>
+                </span>
+            )
+        )
+    }, [subtitle, textRef, window.screen.availWidth]);
 
     let rowClassName: string;
 
@@ -704,6 +806,8 @@ export default function SubtitlePlayer({
             end: end,
             originalEnd: end,
             track: 0,
+
+            annotations:[]
         };
     }, [clock, length]);
 
@@ -749,6 +853,8 @@ export default function SubtitlePlayer({
                 end: end,
                 originalEnd: end,
                 track: 0,
+
+                annotations:[]
             };
         }
 
@@ -1050,7 +1156,7 @@ export default function SubtitlePlayer({
             selectedSubtitleIndexes.length > 0
         ) {
             const selectedSubtitles = selectedSubtitleIndexes
-                .map((selected, index) => (selected ? subtitles[index] : undefined))
+                .map((selected, index) => (selected && subtitles ? subtitles[index] : undefined))
                 .filter((s) => s !== undefined)
                 .filter((s) => !disabledSubtitleTracks[s!.track]) as SubtitleModel[];
 
@@ -1073,6 +1179,9 @@ export default function SubtitlePlayer({
                         originalStart: Math.min(...selectedSubtitles.map((s) => s.originalStart)),
                         originalEnd: Math.max(...selectedSubtitles.map((s) => s.originalEnd)),
                         track: 0,
+
+                        //If I want to merge the annotations I would have to also shift the start and end Index
+                        annotations:[]
                     };
                     onCopy(mergedSubtitle, surroundingSubtitles, PostMineAction.showAnkiDialog, true);
                 }
@@ -1089,6 +1198,8 @@ export default function SubtitlePlayer({
         settings.surroundingSubtitlesTimeRadius,
         onCopy,
     ]);
+
+    
 
     let subtitleTable: ReactNode | null = null;
 
@@ -1137,7 +1248,7 @@ export default function SubtitlePlayer({
                                     selectionState={selectionState}
                                     showCopyButton={showCopyButton}
                                     disabled={disabledSubtitleTracks[s.track]}
-                                    subtitle={subtitles[index]}
+                                    subtitle={subtitles?.[index] ?? {} as DisplaySubtitleModel}
                                     subtitleRef={subtitleRefs[index]}
                                     onClickSubtitle={handleClick}
                                     onCopySubtitle={handleCopy}

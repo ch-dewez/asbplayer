@@ -60,7 +60,7 @@ import RequestCopyHistoryHandler from './handlers/asbplayerv2/request-copy-histo
 import DeleteCopyHistoryHandler from './handlers/asbplayerv2/delete-copy-history-handler';
 import ClearCopyHistoryHandler from './handlers/asbplayerv2/clear-copy-history-handler';
 import SaveCopyHistoryHandler from './handlers/asbplayerv2/save-copy-history-handler';
-import FindKnownWordsHandler from './handlers/asbplayerv2/find-known-words-handler';
+import AddAnnotationsHandler from './handlers/asbplayerv2/add-annotations-handler';
 
 if (!isFirefoxBuild) {
     chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
@@ -158,7 +158,7 @@ const handlers: CommandHandler[] = [
     new RequestModelHandler(),
     new CurrentTabHandler(),
     new MobileOverlayForwarderHandler(),
-    new FindKnownWordsHandler(settings),
+    new AddAnnotationsHandler(settings),
 ];
 
 chrome.runtime.onMessage.addListener((request: Command<Message>, sender, sendResponse) => {
@@ -168,6 +168,7 @@ chrome.runtime.onMessage.addListener((request: Command<Message>, sender, sendRes
             (typeof handler.sender === 'object' && handler.sender.includes(request.sender))
         ) {
             if (handler.command === null || handler.command === request.message.command) {
+                
                 if (handler.handle(request, sender, sendResponse) === true) {
                     return true;
                 }

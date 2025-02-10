@@ -1,4 +1,4 @@
-import React, { MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { MutableRefObject, ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isMobile } from 'react-device-detect';
 import { makeStyles } from '@material-ui/core/styles';
 import { useWindowSize } from '../hooks/use-window-size';
@@ -14,6 +14,7 @@ import {
     CardTextFieldValues,
     PostMinePlayback,
     ControlType,
+    AnnotationType,
 } from '@project/common';
 import {
     MiscSettings,
@@ -54,6 +55,7 @@ import { useFullscreen } from '../hooks/use-fullscreen';
 import MobileVideoOverlay from '@project/common/components/MobileVideoOverlay';
 import { CachedLocalStorage } from '../services/cached-local-storage';
 import useLastScrollableControlType from '../../hooks/use-last-scrollable-control-type';
+import { getBasicFormFromText } from "@project/common/japanese-tokenizer/tokenizer"
 
 const overlayContainerHeight = 48;
 
@@ -184,6 +186,73 @@ const showingSubtitleHtml = (
     return wrappedText;
 };
 
+interface SubtitleLineWithColorProps  {
+    subtitle:SubtitleModel,
+    lineIndex:number,
+}
+
+
+const SubtitleLineWithColor = React.memo(function SubtitleTextWithColor({
+    subtitle,
+    lineIndex, 
+}: SubtitleLineWithColorProps) {
+    console.log("With COlor");
+    const [words, setWords] = useState<ReactElement[]>([]);
+    
+    useEffect(() => {
+        if (!subtitle.annotations || subtitle.annotations.length <= 0){
+            setWords([<span>{subtitle.text}</span>])
+            return;
+        }
+
+        let tempWords:ReactElement[] = []; 
+        
+        //get the start and the end of the current line 
+        let start = 0;
+        let end = 0;
+        const lines = subtitle.text.split('\n')
+        for (let i = 0; i <= lineIndex; i++) {
+            const line = lines[i];
+            
+            if (i==lineIndex){
+                end=start+line.length;
+                break
+            }
+            
+            start += line.length
+        }
+
+        for (const annotation of subtitle.annotations){
+            if(annotation.endIndex <= start || annotation.startIndex > end){
+                //word not in the current line
+                continue;
+            }
+            
+            let word = annotation.word;
+            switch (annotation.annotationType) {
+                case (AnnotationType.known) :{
+                    tempWords.push(
+                        <span className="knownWords">{word}</span>
+                    )
+                }case (AnnotationType.unknown) :{
+                    tempWords.push(
+                        <span className="unknownWords">{word}</span>
+                    )
+                    
+                }case (AnnotationType.notInDeck) :{
+                    tempWords.push(
+                        <span className="notInDeckWords">{word}</span>
+                    )
+                    
+                }
+            }
+        }
+
+        setWords(tempWords);
+    }, [subtitle, lineIndex]);
+    return <div>{words}</div>;
+});
+
 interface ShowingSubtitleProps {
     subtitle: IndexedSubtitleModel;
     videoRef: MutableRefObject<ExperimentalHTMLVideoElement | undefined>;
@@ -201,9 +270,12 @@ const ShowingSubtitle = ({
     className,
     onMouseOver,
 }: ShowingSubtitleProps) => {
+    console.log("Showing Subtitle");
     let content;
 
+
     if (subtitle.textImage) {
+        // can't do anything about that
         content = (
             <SubtitleTextImage
                 availableWidth={videoRef.current?.width ?? window.screen.availWidth}
@@ -215,7 +287,7 @@ const ShowingSubtitle = ({
         const lines = subtitle.text.split('\n');
         content = lines.map((line, index) => (
             <p key={index} className="subtitle-line" style={subtitleStyles}>
-                {line}
+                <SubtitleLineWithColor subtitle={subtitle} lineIndex={index}></SubtitleLineWithColor>
             </p>
         ));
     }
@@ -433,6 +505,7 @@ export default function VideoPlayer({
     const [, forceRender] = useState<any>();
     const [mineIntervalStartTimestamp, setMineIntervalStartTimestamp] = useState<number>();
 
+
     useEffect(() => {
         setMiscSettings(settings);
         setSubtitleSettings(settings);
@@ -563,6 +636,8 @@ export default function VideoPlayer({
                 originalEnd: s.originalEnd,
                 track: s.track,
                 index: i,
+
+                annotations: s.annotations
             }))
         );
     }, []);
@@ -979,6 +1054,7 @@ export default function VideoPlayer({
                 end: end,
                 originalEnd: end,
                 track: 0,
+                annotations:[]
             };
 
             return { currentSubtitle, surroundingSubtitles: mockSurroundingSubtitles(currentSubtitle, length, 5000) };
@@ -1132,6 +1208,8 @@ export default function VideoPlayer({
                         end: endTimestamp,
                         originalEnd: endTimestamp,
                         track: 0,
+
+                        annotations: []
                     };
                     let surroundingSubtitles: SubtitleModel[];
 
@@ -1619,6 +1697,7 @@ export default function VideoPlayer({
             )}
             {bottomSubtitleElements.length > 0 && (
                 <SubtitleContainer
+                    
                     alignment={'bottom'}
                     subtitleSettings={subtitleSettings}
                     baseOffset={baseBottomSubtitleOffset}

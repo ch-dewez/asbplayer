@@ -1,4 +1,5 @@
 import {
+    AnnotationType,
     AutoPauseContext,
     CopyToClipboardMessage,
     OffsetFromVideoMessage,
@@ -13,7 +14,7 @@ import {
     allTextSubtitleSettings,
 } from '@project/common/settings';
 import { SubtitleCollection, SubtitleSlice } from '@project/common/subtitle-collection';
-import { computeStyleString, surroundingSubtitles } from '@project/common/util';
+import { computeStyleString, subtitleIntersectsTimeInterval, surroundingSubtitles } from '@project/common/util';
 import i18n from 'i18next';
 import {
     CachingElementOverlay,
@@ -106,6 +107,8 @@ export default class SubtitleController {
             showingCheckRadiusMs: 150,
             returnNextToShow: true,
         });
+
+
         this.autoPauseContext.clear();
     }
 
@@ -477,7 +480,7 @@ export default class SubtitleController {
                             </div>
                         `;
                     } else {
-                        return this._buildTextHtml(subtitle.text, subtitle.track);
+                        return this._buildTextHtmlWithColor(subtitle, subtitle.track);
                     }
                 },
                 key: String(subtitle.index),
@@ -489,6 +492,34 @@ export default class SubtitleController {
         return `<span data-track="${track ?? 0}" class="${this._subtitleClasses(track)}" style="${this._subtitleStyles(
             track
         )}">${text}</span>`;
+    }
+    
+    private _buildTextHtmlWithColor(subtitle: SubtitleModel, track?: number): string {
+        console.log(subtitle);
+        if(!subtitle.annotations || subtitle.annotations.length <= 0){
+            return this._buildTextHtml(subtitle.text);
+        }
+
+        let coloredText = '';
+
+        for (const annotation of subtitle.annotations) {
+            let className = '';
+            switch (annotation.annotationType) {
+                case AnnotationType.known:
+                    className = 'knownWords';
+                    break;
+                case AnnotationType.unknown:
+                    className = 'unknownWords';
+                    break;
+                case AnnotationType.notInDeck:
+                    className = 'notInDeckWords';
+                    break;
+            }
+
+            coloredText += `<span class="${className}">${annotation.word}</span>`;
+        }
+
+        return `<span data-track="${track ?? 0}" class="${this._subtitleClasses(track)}" style="${this._subtitleStyles(track)}">${coloredText}</span>`;
     }
 
     unbind() {
@@ -579,6 +610,8 @@ export default class SubtitleController {
             originalEnd: s.originalEnd,
             track: s.track,
             index: s.index,
+
+            annotations: s.annotations,
         }));
 
         this.lastOffsetChangeTimestamp = Date.now();

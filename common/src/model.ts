@@ -28,6 +28,21 @@ export interface SubtitleModel {
     readonly originalStart: number;
     readonly originalEnd: number;
     readonly track: number;
+
+    annotations?: Annotation[];
+}
+
+export enum AnnotationType{
+    notInDeck, //not in deck
+    unknown,//less < 1 day
+    known,// more than 1 day, i'm not making a mature/recent types because a card that is recent can be changed in mature so if I store the word I would need to check and change the type 
+}
+
+export interface Annotation {
+    annotationType : AnnotationType,
+    startIndex : number,
+    endIndex : number,
+    word: string
 }
 
 export interface CardTextFieldValues {

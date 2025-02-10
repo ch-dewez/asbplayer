@@ -1,10 +1,10 @@
 import { AudioClip } from '@project/common/audio-clip';
-import { AnkiExportMode, CardModel, Image } from '@project/common';
+import { AnkiExportMode, Annotation, AnnotationType, CardModel, Image, SubtitleModel } from '@project/common';
 import { HttpFetcher, Fetcher } from '@project/common';
 import { AnkiSettings, AnkiSettingsFieldKey } from '@project/common/settings';
 import sanitize from 'sanitize-filename';
 import { extractText, sourceString } from '@project/common/util';
-import { getBasicFormFromText } from "@project/common/japanese-tokenizer/tokenizer"
+import { getBasicFormAndSurfaceFormFromText, getBasicFormFromText } from "@project/common/japanese-tokenizer/tokenizer"
 import { useAppKeyBinder } from '../app/hooks/use-app-key-binder';
 
 declare global {
@@ -175,6 +175,22 @@ async function getSavedKnownWord() {
     return JSON.parse(val) as string[]; 
 } 
 
+async function getSavedUnknownWords() {
+    if (!storage) {
+        return undefined;
+    }
+    const val = await storage.get(["unknownWords"])
+    .then((result)=>{
+        return result.unknownWords;
+    });
+
+    if (val == null) {
+        return undefined;
+    }
+
+    return JSON.parse(val) as {word:string, id:number}[]; 
+} 
+
 async function SaveNewKnownWord(knownWords: string[]) {
     if (!storage) {
         return;
@@ -186,8 +202,100 @@ async function SaveNewKnownWord(knownWords: string[]) {
     await storage.set({knownWords:JSON.stringify(alreadyKnownWords)});
 } 
 
-export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettings) {
-    let knownWords: string[] = [];
+async function SaveNewUnknownWord(unknownWords: {word:string, id:number}[]) {
+    if (!storage) {
+        return;
+    }
+    let alreadyUnknownWords: {word:string, id:number}[] = await getSavedUnknownWords() ?? [];
+
+    alreadyUnknownWords.push(...unknownWords);
+
+    await storage.set({unknownWords:JSON.stringify(alreadyUnknownWords)});
+} 
+
+async function RemoveOldUnknownWords(unknownWordsToRemove:{word:string, id:number}[]){
+    if (!storage || unknownWordsToRemove.length <= 0){
+        return;
+    }
+
+    let alreadyUnknownWords = await getSavedUnknownWords();
+    if (alreadyUnknownWords === undefined){
+        console.error("want to remove unknownWords but get get already unknown words");
+        return;
+    }
+
+    alreadyUnknownWords = alreadyUnknownWords.filter((e) => {!unknownWordsToRemove.includes(e)});
+    await storage.set({unknownWords:JSON.stringify(alreadyUnknownWords)});
+}
+
+export async function addAnnotationsToSubtitlesArray(subtitles:SubtitleModel[], ankiSettings:AnkiSettings){
+    let startTime = performance.now();
+    let text = "";
+
+    for (const subtitleText of subtitles.map((e) => e.text)){
+        text += " " + subtitleText;
+    }
+
+    let knownWords = await findKnownWordsInText(text, ankiSettings)
+
+    let resultPromises : Promise<SubtitleModel>[] = [];
+    for (const subtitle of subtitles){
+       resultPromises.push(addAnnotationsToSubtitle(subtitle, knownWords, ankiSettings));
+    }
+    
+    let resultSubtitles:SubtitleModel[] = [];
+
+    await Promise.all(resultPromises)
+    .then((data) => {
+        resultSubtitles = data; 
+    })
+
+    const endTime = performance.now()
+    console.log(`it took ${endTime-startTime}`);
+    return resultSubtitles; 
+}
+
+// knownWords var name should be changed
+export async function addAnnotationsToSubtitle(subtitle:SubtitleModel, knownWords: {word: string, annotationType:AnnotationType}[], ankiSettings:AnkiSettings): Promise<SubtitleModel>{
+    subtitle.annotations = [];
+    let newSubtitle = subtitle;
+
+    // add the annotations
+    // so we need to separate words
+    let forms = await getBasicFormAndSurfaceFormFromText(subtitle.text);
+
+    // made by o3
+    function escapeRegExp(str: string): string {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    for (const currentForms of forms){
+        // need to find start and end for that words
+        const escapedSurfaceForm = escapeRegExp(currentForms.surface_form);
+        let start = subtitle.text.search(new RegExp(escapedSurfaceForm));
+        let end = start + currentForms.surface_form.length;
+
+        let annotationType = knownWords.find((e) => e.word === currentForms.basic_form)?.annotationType;
+
+        if (annotationType === undefined){
+            annotationType = AnnotationType.unknown;
+        }
+
+        let annotation : Annotation = {startIndex:start, endIndex: end, annotationType:annotationType, word:currentForms.surface_form};
+        subtitle.annotations.push(annotation);
+    }
+
+    return newSubtitle;
+}
+
+// function name need to be changed 
+export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettings |Promise<AnkiSettings>): Promise<{word:string, annotationType:AnnotationType}[]> {
+
+    if(ankiSettings instanceof Promise){
+        ankiSettings = await ankiSettings;
+    } 
+
+    let words: {word:string, annotationType:AnnotationType}[] = [];
 
     // first step is to separate the text in words -> japanese tokenizer
     let basic_form = await getBasicFormFromText(text);
@@ -198,54 +306,97 @@ export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettin
 
     for (const word of basic_form){
         if (alreadyKnownWords.includes(word)){
-            knownWords.push(word);
+            words.push({word:word, annotationType:AnnotationType.known});
+        }
+    }
+
+    const alreadyUnknownWords = await getSavedUnknownWords() ?? [];
+    
+    let unknownWordsInText: {word:string, id:number}[] = [];
+    for (const unknownWord of alreadyUnknownWords){
+        if (basic_form.includes(unknownWord.word)){
+            
+            unknownWordsInText.push(unknownWord);
         }
     }
 
     //remove them from basic_form so we don't make useless request
-
-    basic_form = basic_form.filter((e) => !knownWords.includes(e));
+    //word contains only knownWords for now
+    basic_form = basic_form.filter((e) => !words.map((e) => e.word).includes(e));
+    basic_form = basic_form.filter((e) => !unknownWordsInText.map((e) => e.word).includes(e));
 
     //once we have the basic form we need to find the word in Anki
     const anki = new Anki(ankiSettings);
     
-    let cards: {word: string; id:number;}[] = [];
-    let cardPromises: Promise<{ word: string; id: number } | undefined>[] = [];
-    
+    let actions = []
     for (const word of basic_form) {
-        cardPromises.push(anki.findNotesWithFieldContaingWord(word).then((id)=>{if(id.length === 0){return undefined} return {word:word, id: id[0]} }))
+        actions.push(
+            anki.createFindNotesActionsWithBoth(word)
+        )
     }
 
-
-    await Promise.all(cardPromises)
-    .then((data) => {
-        for (const card of data ) {
-            if (card == undefined) {
-                continue
+    let cards: {word: string; id:number;}[] = [];
+    await anki.multi(actions)
+    .then((results) => {
+        for (let i = 0; i < results.length; i++) {
+            const result = results[i];
+            if(result.error){
+                console.log(result.error);
             }
-            cards.push(card);
+
+            let word = basic_form[i];
+
+            if (result.result.length <= 0){
+                //not in deck
+                words.push({word:word, annotationType:AnnotationType.notInDeck});
+                continue;
+            }
+            let id = result.result[0]; // ik it's a bit weird -- 0 bcs we want the first that has been found
+
+            cards.push({word:word, id:id});
         }
-    })
+    });
 
     //once we have the word we need to check if the interval is > that 1 days
     //return negative when seconds and positive if days so if we do > than 1 that will work
 
-    let cardIds = cards.map((card) => {return card.id})
+    let cardIds = cards.filter((card) => card.id !== undefined).map((card) => card.id);
     let intervals: number[] = await anki.getInterval(cardIds) ;
+    // we need to check if the unknownWords we saved are still unknown
+    let unknownIntervals: number[] = await anki.getInterval(unknownWordsInText.map((e) => e.id));
 
-
-    let knownWordsToSave : string[] = [];
-
-    for (let i = 0; i < intervals.length; i++) {
-        if (intervals[i] > 1) {
-            knownWords.push(cards[i].word);
-            knownWordsToSave.push(cards[i].word);
+    let unknownWordsToRemove = [];
+    for (let i = 0; i < unknownIntervals.length; i++) {
+        const element = unknownWordsInText[i];
+        const interval = unknownIntervals[i];
+        
+        if (interval > 1){
+            words.push({word:element.word, annotationType:AnnotationType.known});
+            unknownWordsToRemove.push(element);
+        }else {
+            words.push({word:element.word, annotationType:AnnotationType.unknown});
         }
     }
 
-    await SaveNewKnownWord(knownWordsToSave);
 
-    return knownWords;
+    let knownWordsToSave : string[] = [];
+    let unKnownWordsToSave : {word:string, id:number}[] = []
+
+    for (let i = 0; i < intervals.length; i++) {
+        if (intervals[i] > 1) {
+            words.push({word:cards[i].word, annotationType:AnnotationType.known});
+            knownWordsToSave.push(cards[i].word);
+        }else {
+            words.push({word:cards[i].word, annotationType:AnnotationType.unknown});
+            unKnownWordsToSave.push(cards[i]);
+        }
+    }
+
+    // not saving unknown words because they can become known but I mean in the future I could (feature noted in notion)
+    SaveNewKnownWord(knownWordsToSave);
+    SaveNewUnknownWord(unKnownWordsToSave);
+
+    return words;
 }
 
 export class Anki {
@@ -288,6 +439,30 @@ export class Anki {
             ankiConnectUrl
         );
         return response.result;
+    }
+
+    createFindNotesActions(word:string, version?:number){
+        return {
+            action: 'findNotes', 
+            params: { query: this.settingsProvider.wordField + ':' + this._escapeQuery(word) },
+            version: version ? (version) : 6
+        }
+    }
+
+    createFindNotesActionsWithHtml(word:string, version?:number){
+        return {
+            action: 'findNotes', 
+            params: { query: this.settingsProvider.wordField + ':' + "*>"+ this._escapeQuery(word) + "<*" },
+            version: version ? (version) : 6
+        }
+    }
+    
+    createFindNotesActionsWithBoth(word:string, version?:number){
+        return {
+            action: 'findNotes', 
+            params: { query: this.settingsProvider.wordField + ':' + "*>"+ this._escapeQuery(word) + "<*" + " OR " + this.settingsProvider.wordField + ':' + this._escapeQuery(word) },
+            version: version ? (version) : 6
+        }
     }
 
     async findNotes(word: string, ankiConnectUrl?: string) {
@@ -341,6 +516,12 @@ export class Anki {
 
     async version(ankiConnectUrl?: string) {
         const response = await this._executeAction('version', null, ankiConnectUrl);
+        return response.result;
+    }
+
+    async multi(actions: {action:string, version?:number, params?:{}}[], ankiConnectUrl?:string){
+        let params = {actions : actions};
+        const response = await this._executeAction('multi', params, ankiConnectUrl);
         return response.result;
     }
 

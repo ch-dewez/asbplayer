@@ -48,7 +48,14 @@ export const tokenize = async (text: string) => {
 export const getBasicFormFromText = async (text: string) => {
 	const tokenizer = await getTokenizer();
 	const tokens = tokenizer.tokenize(text);
-    let basic_form = tokens.map((e) => e.basic_form)
+  let basic_form = tokens.map((e) => e.basic_form)
 	return basic_form;
+}
+
+export const getBasicFormAndSurfaceFormFromText = async (text: string) : Promise<{basic_form: string, surface_form: string}[]> => {
+	const tokenizer = await getTokenizer();
+	const tokens = tokenizer.tokenize(text);
+  let forms = tokens.map((e) => {return {basic_form:e.basic_form, surface_form:e.surface_form}})
+	return forms;
 }
 
