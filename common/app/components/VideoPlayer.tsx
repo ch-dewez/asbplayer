@@ -200,6 +200,7 @@ const SubtitleLineWithColor = React.memo(function SubtitleTextWithColor({
     const [words, setWords] = useState<ReactElement[]>([]);
     
     useEffect(() => {
+        console.log(subtitle);
         if (!subtitle.annotations || subtitle.annotations.length <= 0){
             setWords([<span>{subtitle.text}</span>])
             return;
@@ -700,8 +701,24 @@ export default function VideoPlayer({
         });
 
         playerChannel.onSubtitles((subtitles) => {
-            setSubtitles(subtitles.map((s, i) => ({ ...s, index: i })));
+            let indexedSubtitles = subtitles.map((s, i) => ({ ...s, index: i })) as IndexedSubtitleModel[];
+            setSubtitles(indexedSubtitles);
             setTrackCount(Math.max(...subtitles.map((s) => s.track)) + 1);
+
+            
+            if (indexedSubtitles !== undefined){
+
+                extension.getAnnotationsFromSubtitles(indexedSubtitles)
+                .then((result)=> {
+                    if (!result || !result.subtitles) {
+                        return;
+                    }
+                    let displaySubtitle = result.subtitles as IndexedSubtitleModel[];
+                    setSubtitles(displaySubtitle);
+                    console.log("set subtitles");
+                    console.log(displaySubtitle);
+                })
+            }
 
             if (subtitles && subtitles.length > 0) {
                 const s = subtitles[0];

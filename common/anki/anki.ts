@@ -328,7 +328,7 @@ export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettin
     //once we have the basic form we need to find the word in Anki
     const anki = new Anki(ankiSettings);
     
-    let actions = []
+    let actions: any = []
     for (const word of basic_form) {
         actions.push(
             anki.createFindNotesActionsWithBoth(word)
@@ -365,7 +365,7 @@ export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettin
     // we need to check if the unknownWords we saved are still unknown
     let unknownIntervals: number[] = await anki.getInterval(unknownWordsInText.map((e) => e.id));
 
-    let unknownWordsToRemove = [];
+    let unknownWordsToRemove: {word:string, id:number}[] = [];
     for (let i = 0; i < unknownIntervals.length; i++) {
         const element = unknownWordsInText[i];
         const interval = unknownIntervals[i];

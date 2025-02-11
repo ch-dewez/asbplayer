@@ -112,7 +112,7 @@ export const defaultSettings: AsbplayerSettings = {
     preferMp3: true,
     tabName: 'asbplayer',
     miningHistoryStorageLimit: 25,
-    preCacheSubtitleDom: true,
+    preCacheSubtitleDom: false, // make color on video's subtitles not working need to be fixed
     clickToMineDefaultAction: PostMineAction.showAnkiDialog,
     postMiningPlaybackState: PostMinePlayback.remember,
     themeType: 'dark',

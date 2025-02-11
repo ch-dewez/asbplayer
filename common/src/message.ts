@@ -149,8 +149,13 @@ export interface PublishCardMessage extends Message, CardModel {
 }
 
 export interface AddAnnotationsMessage extends Message {
-    readonly command: 'find-known-words';
+    readonly command: 'add-annotations';
     readonly subtitles: SubtitleModel[]
+}
+
+export interface AddAnnotationsMessageFromApp extends MessageWithId {
+    readonly command: 'add-annotations';
+    readonly subtitles: SubtitleModel[];
 }
 
 export interface CopyToVideoMessage extends Message, CardTextFieldValues {

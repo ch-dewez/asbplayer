@@ -378,6 +378,16 @@ const Player = React.memo(function Player({
 
                     setSubtitlesSentThroughChannel(false);
                     onSubtitles(subtitles);
+
+
+                    extension.getAnnotationsFromSubtitles(subtitles)
+                    .then((result)=> {
+                        let displaySubtitle = result.subtitles as DisplaySubtitleModel[];
+                        onSubtitles(displaySubtitle);
+                        console.log("set subtitles");
+                        console.log(displaySubtitle);
+                    })
+
                     setPlayMode((playMode) => (!subtitles || subtitles.length === 0 ? PlayMode.normal : playMode));
                 } catch (e) {
                     onError(e);

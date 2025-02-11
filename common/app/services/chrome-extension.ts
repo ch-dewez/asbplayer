@@ -29,6 +29,9 @@ import {
     ClearCopyHistoryMessage,
     SetGlobalStateMessage,
     GetGlobalStateMessage,
+    SubtitleModel,
+    Command,
+    AddAnnotationsMessageFromApp,
 } from '@project/common';
 import { AsbplayerSettings, Profile } from '@project/common/settings';
 import { GlobalState } from '@project/common/global-state';
@@ -319,6 +322,20 @@ export default class ChromeExtension {
         return this._createResponsePromise(messageId);
     }
 
+    getAnnotationsFromSubtitles(subtitles: SubtitleModel[]){
+        const messageId = uuidv4();
+        const command: Command<AddAnnotationsMessageFromApp> = {
+            sender: 'player',
+            message: {
+                command: 'add-annotations',
+                subtitles: subtitles,
+                messageId,
+            },
+        };
+        window.postMessage(command);
+        return this._createResponsePromise(messageId) as Promise<{subtitles:SubtitleModel[]}>;
+    }
+
     requestCopyHistory(count: number) {
         const messageId = uuidv4();
         const command: AsbPlayerCommand<RequestCopyHistoryMessage> = {
@@ -511,7 +528,7 @@ export default class ChromeExtension {
                     delete this._responseResolves[messageId];
                     reject('Request timed out');
                 }
-            }, 5000);
+            }, 70000);
         });
     }
 

@@ -15,6 +15,10 @@ export default class AddAnnotationsHandler implements CommandHandler {
 
     handle(command: Command<Message>, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean {
         const { subtitles } = command.message as AddAnnotationsMessage;
+        if (subtitles[0].annotations !== undefined && subtitles[0].annotations.length > 0) {
+            sendResponse({ subtitles: subtitles });
+            return true;
+        }
         this._settingsProvider.get(ankiSettingsKeys)
         .then((settings) => {
             return addAnnotationsToSubtitlesArray(subtitles, settings);

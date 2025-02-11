@@ -30,7 +30,7 @@ window.addEventListener('message', async (event) => {
 
     const command = event.data;
 
-    if (command.sender === 'asbplayer' || command.sender === 'asbplayerv2') {
+    if (command.sender === 'asbplayer' || command.sender === 'asbplayerv2' || command.sender === 'player') {
         switch (command.message.command) {
             case 'get-settings':
                 const getSettingsMessage = command.message as GetSettingsMessage;
@@ -127,6 +127,12 @@ window.addEventListener('message', async (event) => {
                     messageId: command.message.messageId,
                 });
                 break;
+            case 'add-annotations':
+                let result = await chrome.runtime.sendMessage(command);
+                sendMessageToPlayer({
+                    messageId: command.message.messageId,
+                    response: result,
+                })
             default:
                 chrome.runtime.sendMessage(command);
                 break;

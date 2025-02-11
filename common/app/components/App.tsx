@@ -1052,14 +1052,23 @@ function App({
                         const subtitleFileName = subtitleFileNames[0];
                         setFileName(subtitleFileName.substring(0, subtitleFileName.lastIndexOf('.')));
                         const length = subtitles.length > 0 ? subtitles[subtitles.length - 1].end : 0;
-                        setSubtitles(
-                            subtitles.map((s, i) => ({
+                        let newSubtitles = subtitles.map((s, i) => ({
                                 ...s,
                                 displayTime: timeDurationDisplay(s.start, length),
                                 index: i,
-                            }))
-                        );
+                            }));
+                        setSubtitles(newSubtitles);
                         setTab(videoElement);
+                        if (!newSubtitles[0].annotations){
+
+                            extension.getAnnotationsFromSubtitles(newSubtitles)
+                            .then((result)=>{
+                                let subtitlesWithAnnotations = result as DisplaySubtitleModel[];
+                                setSubtitles(subtitlesWithAnnotations);
+                                console.log("Subtitles set");
+                                console.log(subtitles);
+                            });
+                        }
                     }
                 }
             } else {
