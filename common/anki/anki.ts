@@ -228,6 +228,33 @@ async function RemoveOldUnknownWords(unknownWordsToRemove:{word:string, id:numbe
     await storage.set({unknownWords:JSON.stringify(alreadyUnknownWords)});
 }
 
+async function GetSavedNotInDeckWords(){
+    if (!storage) {
+        return undefined;
+    }
+    const val = await storage.get(["notInDeckWords"])
+    .then((result)=>{
+        return result.notInDeckWords;
+    });
+
+    if (val == null) {
+        return undefined;
+    }
+
+    return JSON.parse(val) as string[]; 
+}
+
+async function SaveNewNotInDeckWord(notInDeckWords: string[]) {
+    if (!storage) {
+        return;
+    }
+    let alreadyNotInDeckWords: string[] = await GetSavedNotInDeckWords() ?? [];
+
+    alreadyNotInDeckWords.push(...notInDeckWords);
+
+    await storage.set({notInDeckWords:JSON.stringify(alreadyNotInDeckWords)});
+} 
+
 export async function addAnnotationsToSubtitlesArray(subtitles:SubtitleModel[], ankiSettings:AnkiSettings){
     let startTime = performance.now();
     let text = "";
@@ -301,7 +328,7 @@ export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettin
     let basic_form = await getBasicFormFromText(text);
     basic_form = [...new Set(basic_form)];
 
-    // we'll chech in the already saved known words list
+    // we'll chech in the already saved words lists
     const alreadyKnownWords: string[] = await getSavedKnownWord() ?? [];
 
     for (const word of basic_form){
@@ -311,7 +338,6 @@ export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettin
     }
 
     const alreadyUnknownWords = await getSavedUnknownWords() ?? [];
-    
     let unknownWordsInText: {word:string, id:number}[] = [];
     for (const unknownWord of alreadyUnknownWords){
         if (basic_form.includes(unknownWord.word)){
@@ -319,9 +345,16 @@ export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettin
             unknownWordsInText.push(unknownWord);
         }
     }
+    
+    const alreadyNotInDeckWords: string[] = await GetSavedNotInDeckWords() ?? [];
 
-    //remove them from basic_form so we don't make useless request
-    //word contains only knownWords for now
+    for (const word of basic_form){
+        if (alreadyNotInDeckWords.includes(word)){
+            words.push({word:word, annotationType:AnnotationType.notInDeck});
+        }
+    }
+
+    //remove them from basic_form so we don't to make useless request
     basic_form = basic_form.filter((e) => !words.map((e) => e.word).includes(e));
     basic_form = basic_form.filter((e) => !unknownWordsInText.map((e) => e.word).includes(e));
 
@@ -336,6 +369,7 @@ export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettin
     }
 
     let cards: {word: string; id:number;}[] = [];
+    let notInDeckWordsToSave: string[] = [];
     await anki.multi(actions)
     .then((results) => {
         for (let i = 0; i < results.length; i++) {
@@ -348,6 +382,7 @@ export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettin
 
             if (result.result.length <= 0){
                 //not in deck
+                notInDeckWordsToSave.push(word);
                 words.push({word:word, annotationType:AnnotationType.notInDeck});
                 continue;
             }
@@ -356,6 +391,8 @@ export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettin
             cards.push({word:word, id:id});
         }
     });
+
+    SaveNewNotInDeckWord(notInDeckWordsToSave);
 
     //once we have the word we need to check if the interval is > that 1 days
     //return negative when seconds and positive if days so if we do > than 1 that will work
