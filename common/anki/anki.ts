@@ -378,6 +378,8 @@ export async function findKnownWordsInText(text: string, ankiSettings:AnkiSettin
         }
     }
 
+    RemoveOldUnknownWords(unknownWordsToRemove);
+
 
     let knownWordsToSave : string[] = [];
     let unKnownWordsToSave : {word:string, id:number}[] = []
