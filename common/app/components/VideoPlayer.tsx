@@ -235,16 +235,17 @@ const SubtitleLineWithColor = React.memo(function SubtitleTextWithColor({
                     tempWords.push(
                         <span className="knownWords">{word}</span>
                     )
+                    break;
                 }case (AnnotationType.unknown) :{
                     tempWords.push(
                         <span className="unknownWords">{word}</span>
                     )
-                    
+                    break; 
                 }case (AnnotationType.notInDeck) :{
                     tempWords.push(
                         <span className="notInDeckWords">{word}</span>
                     )
-                    
+                    break; 
                 }
             }
         }
