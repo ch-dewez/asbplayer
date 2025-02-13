@@ -483,7 +483,7 @@ export class Anki {
     createFindNotesActions(word:string, version?:number){
         return {
             action: 'findNotes', 
-            params: { query: this.settingsProvider.wordField + ':' + this._escapeQuery(word) },
+            params: { query: "*:" + this._escapeQuery(word) }, // *: = any field with exactly word
             version: version ? (version) : 6
         }
     }
@@ -491,7 +491,7 @@ export class Anki {
     createFindNotesActionsWithHtml(word:string, version?:number){
         return {
             action: 'findNotes', 
-            params: { query: this.settingsProvider.wordField + ':' + "*>"+ this._escapeQuery(word) + "<*" },
+            params: { query: "*:" + "*>"+ this._escapeQuery(word) + "<*" },  //*: = any field with * = anything before >word< * = anything after
             version: version ? (version) : 6
         }
     }
@@ -499,7 +499,7 @@ export class Anki {
     createFindNotesActionsWithBoth(word:string, version?:number){
         return {
             action: 'findNotes', 
-            params: { query: this.settingsProvider.wordField + ':' + "*>"+ this._escapeQuery(word) + "<*" + " OR " + this.settingsProvider.wordField + ':' + this._escapeQuery(word) },
+            params: { query: "*>"+ this._escapeQuery(word) + "<*" + " OR " + "*:" + this.settingsProvider.wordField + ':' + this._escapeQuery(word) }, // both combine with OR
             version: version ? (version) : 6
         }
     }
