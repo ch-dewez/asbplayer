@@ -158,6 +158,28 @@ export interface AddAnnotationsMessageFromApp extends MessageWithId {
     readonly subtitles: SubtitleModel[];
 }
 
+export interface setWordMessage extends Message {
+    readonly command: 'set-word-state';
+    readonly word: string;
+}
+
+export interface setWordMessageFromApp extends MessageWithId {
+    readonly command: 'set-word-state';
+    readonly word: string;
+}
+
+export interface setWordAndSubtitlesMessage extends Message {
+    readonly command: 'set-word-state';
+    readonly word: string;
+    readonly subtitles: SubtitleModel[];
+}
+
+export interface setWordAndSubtitlesMessageFromApp extends MessageWithId {
+    readonly command: 'set-word-state';
+    readonly word: string;
+    readonly subtitles: SubtitleModel[];
+}
+
 export interface CopyToVideoMessage extends Message, CardTextFieldValues {
     readonly command: 'copy';
     readonly postMineAction: PostMineAction;

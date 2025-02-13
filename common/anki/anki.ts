@@ -158,6 +158,78 @@ export async function exportCard(card: CardModel, ankiSettings: AnkiSettings, ex
 
 let storage = typeof chrome !== 'undefined' && chrome.storage ? chrome.storage.local : undefined;
 
+export async function setWordsStateWithSubtitles(word:string, state:AnnotationType, oldState:AnnotationType, subtitles:SubtitleModel[], cardId?:number){
+    removeWordFromStorage(word, oldState);
+    addWordToStorage(word, state, cardId)
+
+    subtitles.map((subtitle) => {
+        if (!subtitle.annotations || subtitle.annotations.length <= 0) {
+            return subtitle;
+        }
+        return subtitle.annotations.map((annotation) => {
+            if (annotation.basic_form === word) {
+                annotation.annotationType = state;
+                return annotation;
+            }
+
+            return annotation;
+        })
+    })
+
+    return subtitles;
+}
+
+async function addWordToStorage(word:string, state:AnnotationType, cardId?:number){
+    switch (state) {
+        case AnnotationType.known:
+            let currentKnownWords = await getSavedKnownWord();
+            currentKnownWords?.push(word);
+            await storage?.set({knownWords:JSON.stringify(currentKnownWords)});
+            break;
+    
+        case AnnotationType.unknown:
+            if (!cardId) {
+                return;
+            }
+            let currentUnknownWords = await getSavedUnknownWords();
+            currentUnknownWords?.push({word:word, id:cardId});
+            await storage?.set({unknownWords:JSON.stringify(currentUnknownWords)});
+            break;
+
+        case AnnotationType.notInDeck:
+            let currentNotInDeckWords = await GetSavedNotInDeckWords();
+            currentNotInDeckWords?.push(word);
+            await storage?.set({notInDeckWords:JSON.stringify(currentNotInDeckWords)});
+            break;
+        default:
+            break;
+    }
+}
+
+async function removeWordFromStorage(word:string, state:AnnotationType){
+    switch (state) {
+        case AnnotationType.known:
+            let currentKnownWords = await getSavedKnownWord();
+            currentKnownWords?.filter((e) => e !== word);
+            await storage?.set({knownWords:JSON.stringify(currentKnownWords)});
+            break;
+    
+        case AnnotationType.unknown:
+            let currentUnknownWords = await getSavedUnknownWords();
+            currentUnknownWords?.filter((e) => e.word !== word);
+            await storage?.set({unknownWords:JSON.stringify(currentUnknownWords)});
+            break;
+
+        case AnnotationType.notInDeck:
+            let currentNotInDeckWords = await GetSavedNotInDeckWords();
+            currentNotInDeckWords?.filter((e) => e !== word);
+            await storage?.set({notInDeckWords:JSON.stringify(currentNotInDeckWords)});
+            break;
+        default:
+            break;
+    }
+}
+
 
 async function getSavedKnownWord() {
     if (!storage) {
@@ -308,7 +380,7 @@ export async function addAnnotationsToSubtitle(subtitle:SubtitleModel, knownWord
             annotationType = AnnotationType.unknown;
         }
 
-        let annotation : Annotation = {startIndex:start, endIndex: end, annotationType:annotationType, word:currentForms.surface_form};
+        let annotation : Annotation = {startIndex:start, endIndex: end, annotationType:annotationType, word:currentForms.surface_form, basic_form:currentForms.basic_form};
         subtitle.annotations.push(annotation);
     }
 

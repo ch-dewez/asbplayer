@@ -42,7 +42,8 @@ export interface Annotation {
     annotationType : AnnotationType,
     startIndex : number,
     endIndex : number,
-    word: string
+    word: string,
+    basic_form: string,
 }
 
 export interface CardTextFieldValues {

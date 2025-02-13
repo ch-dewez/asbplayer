@@ -49,7 +49,7 @@ import { MineSubtitleParams } from '../hooks/use-app-web-socket-client';
 import { isMobile } from 'react-device-detect';
 import ChromeExtension, { ExtensionMessage } from '../services/chrome-extension';
 import { MineSubtitleCommand, WebSocketClient } from '../../web-socket-client';
-import { getBasicFormFromText } from '../../japanese-tokenizer/tokenizer';
+import {setWordsStateWithSubtitles} from '@project/common/anki'
 
 let lastKnownWidth: number | undefined;
 export const minSubtitlePlayerWidth = 200;
@@ -261,24 +261,15 @@ enum SelectionState {
     outsideSelection = 2,
 }
 
-interface SubtitleRowProps extends TableRowProps {
-    index: number;
-    compressed: boolean;
-    selectionState?: SelectionState;
-    disabled: boolean;
-    subtitle: DisplaySubtitleModel;
-    showCopyButton: boolean;
-    subtitleRef: RefObject<HTMLTableRowElement>;
-    onClickSubtitle: (index: number) => void;
-    onCopySubtitle: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>, index: number) => void;
-}
 
 interface SubtitleTextWithColorProps  {
     subtitle:SubtitleModel,
+    onWordClick:(word:string, currentState:AnnotationType) => void,
 }
 
 const SubtitleTextWithColor = React.memo(function SubtitleTextWithColor({
     subtitle,
+    onWordClick,
 }: SubtitleTextWithColorProps) {
     const classes = useSubtitleRowStyles();
     const [words, setWords] = useState<ReactElement[]>([]);
@@ -296,17 +287,17 @@ const SubtitleTextWithColor = React.memo(function SubtitleTextWithColor({
             switch (annotation.annotationType) {
                 case (AnnotationType.known) :{
                     tempWords.push(
-                        <div className={classes['knownWords']} >{word}</div>
+                        <div className={classes['knownWords']} onClick={() => onWordClick(annotation.basic_form, annotation.annotationType)}>{word}</div>
                     )
                     break;
                 }case (AnnotationType.unknown) :{
                     tempWords.push(
-                        <div className={classes['unknownWords']}>{word}</div>
+                        <div className={classes['unknownWords']} onClick={() => onWordClick(annotation.basic_form, annotation.annotationType)}>{word}</div>
                     )
                     break; 
                 }case (AnnotationType.notInDeck) :{
                     tempWords.push(
-                        <div className={classes['notInDeckWords']}>{word}</div>
+                        <div className={classes['notInDeckWords']} onClick={() => onWordClick(annotation.basic_form, annotation.annotationType)}>{word}</div>
                     )
                     break; 
                 }
@@ -318,6 +309,19 @@ const SubtitleTextWithColor = React.memo(function SubtitleTextWithColor({
     return <div key={subtitle.start}>{words}</div>;
 });
 
+interface SubtitleRowProps extends TableRowProps {
+    index: number;
+    compressed: boolean;
+    selectionState?: SelectionState;
+    disabled: boolean;
+    subtitle: DisplaySubtitleModel;
+    showCopyButton: boolean;
+    subtitleRef: RefObject<HTMLTableRowElement>;
+    onClickSubtitle: (index: number) => void;
+    onCopySubtitle: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>, index: number) => void;
+    onWordClick: (word:string, currnetState: AnnotationType) => void;
+}
+
 const SubtitleRow = React.memo(function SubtitleRow({
     index,
     selectionState,
@@ -328,6 +332,7 @@ const SubtitleRow = React.memo(function SubtitleRow({
     disabled,
     subtitle,
     showCopyButton,
+    onWordClick
 }: SubtitleRowProps) {
     const classes = useSubtitleRowStyles();
     const textRef = useRef<HTMLSpanElement>(null);
@@ -353,7 +358,7 @@ const SubtitleRow = React.memo(function SubtitleRow({
                 <SubtitleTextImage availableWidth={window.screen.availWidth / 2} subtitle={subtitle} scale={1} />
             ) : (
                 <span ref={textRef} className={disabledClassName}>
-                    <SubtitleTextWithColor subtitle={subtitle}></SubtitleTextWithColor>
+                    <SubtitleTextWithColor subtitle={subtitle} onWordClick={onWordClick}></SubtitleTextWithColor>
                 </span>
             )
         )
@@ -1198,6 +1203,10 @@ export default function SubtitlePlayer({
         settings.surroundingSubtitlesTimeRadius,
         onCopy,
     ]);
+    
+    const handleClickOnWord = async (word:string, currentState: AnnotationType) => {
+        subtitles = await setWordsStateWithSubtitles(word, AnnotationType.known, currentState, subtitles as SubtitleModel[]) as DisplaySubtitleModel[];
+    }
 
     
 
@@ -1252,6 +1261,7 @@ export default function SubtitlePlayer({
                                     subtitleRef={subtitleRefs[index]}
                                     onClickSubtitle={handleClick}
                                     onCopySubtitle={handleCopy}
+                                    onWordClick={handleClickOnWord}
                                 />
                             );
                         })}

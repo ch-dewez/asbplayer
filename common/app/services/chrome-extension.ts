@@ -32,6 +32,8 @@ import {
     SubtitleModel,
     Command,
     AddAnnotationsMessageFromApp,
+    setWordMessageFromApp,
+    setWordAndSubtitlesMessageFromApp,
 } from '@project/common';
 import { AsbplayerSettings, Profile } from '@project/common/settings';
 import { GlobalState } from '@project/common/global-state';
@@ -328,6 +330,34 @@ export default class ChromeExtension {
             sender: 'player',
             message: {
                 command: 'add-annotations',
+                subtitles: subtitles,
+                messageId,
+            },
+        };
+        window.postMessage(command);
+        return this._createResponsePromise(messageId) as Promise<{subtitles:SubtitleModel[]}>;
+    }
+
+    setWordState(word:string){
+        const messageId = uuidv4();
+        const command: Command<setWordMessageFromApp> = {
+            sender: 'player',
+            message: {
+                command: 'set-word-state',
+                word: word,
+                messageId,
+            },
+        };
+        window.postMessage(command);
+    }
+    
+    setWordStateAndSubtitles(subtitles:SubtitleModel[], word:string){
+        const messageId = uuidv4();
+        const command: Command<setWordAndSubtitlesMessageFromApp> = {
+            sender: 'player',
+            message: {
+                command: 'set-word-state',
+                word: word,
                 subtitles: subtitles,
                 messageId,
             },
