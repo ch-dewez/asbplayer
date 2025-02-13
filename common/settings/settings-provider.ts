@@ -254,7 +254,7 @@ export const changeForTextSubtitleSetting = (
 ) => {
     if (track === undefined) {
         // Change settings for all tracks
-        const newSubtitleTracks = [];
+        const newSubtitleTracks: TextSubtitleSettings[] = [];
 
         for (let i = 0; i < subtitleSettings.subtitleTracksV2.length; ++i) {
             newSubtitleTracks.push({ ...subtitleSettings.subtitleTracksV2[i], ...updates });
