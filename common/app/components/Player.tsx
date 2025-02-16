@@ -171,12 +171,13 @@ const Player = React.memo(function Player({
     const subtitlesRef = useRef<DisplaySubtitleModel[]>();
     subtitlesRef.current = subtitles;
     const subtitleCollection = useMemo<SubtitleCollection<DisplaySubtitleModel>>(
-        () =>
-            new SubtitleCollection(subtitles ?? [], {
+        () => {
+            return new SubtitleCollection(subtitles ?? [], {
                 returnLastShown: true,
                 returnNextToShow: playMode === PlayMode.condensed || playMode === PlayMode.fastForward,
                 showingCheckRadiusMs: 100,
-            }),
+            })
+        },
         [subtitles, playMode]
     );
     const subtitleFiles = sources?.subtitleFiles;
@@ -382,10 +383,12 @@ const Player = React.memo(function Player({
 
                     extension.getAnnotationsFromSubtitles(subtitles)
                     .then((result)=> {
-                        let displaySubtitle = result.subtitles as DisplaySubtitleModel[];
+                        let displaySubtitle = result as DisplaySubtitleModel[];
+                        if (displaySubtitle === undefined){
+                            console.log(subtitles);
+                            return;
+                        }
                         onSubtitles(displaySubtitle);
-                        console.log("set subtitles");
-                        console.log(displaySubtitle);
                     })
 
                     setPlayMode((playMode) => (!subtitles || subtitles.length === 0 ? PlayMode.normal : playMode));
@@ -1044,6 +1047,7 @@ const Player = React.memo(function Player({
                     )}
                     <SubtitlePlayer
                         subtitles={subtitles}
+                        onSubtitles={onSubtitles}
                         subtitleCollection={subtitleCollection}
                         clock={clock}
                         extension={extension}

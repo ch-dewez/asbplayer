@@ -155,13 +155,10 @@ export default function SidePanel({ settings, extension }: Props) {
                                 },
                             },
                             (response) => {
-                            
-                                console.log("response :");
-                                console.log(response);
                                 if (response.error) {
                                     console.error(response.error);
                                 } else {
-                                    setSubtitles(response.subtitles ?? []);
+                                    setSubtitles(response ?? []);
                                 }
                             }
                         );

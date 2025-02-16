@@ -1064,9 +1064,11 @@ function App({
                             extension.getAnnotationsFromSubtitles(newSubtitles)
                             .then((result)=>{
                                 let subtitlesWithAnnotations = result as DisplaySubtitleModel[];
+                                if (subtitlesWithAnnotations === undefined) {
+                                    console.log("display sub undefined");
+                                    return;
+                                }
                                 setSubtitles(subtitlesWithAnnotations);
-                                console.log("Subtitles set");
-                                console.log(subtitles);
                             });
                         }
                     }

@@ -39,10 +39,12 @@ export enum AnnotationType{
 }
 
 export interface Annotation {
-    annotationType : AnnotationType,
+    annotationType : AnnotationType, // affected by change from the user
     startIndex : number,
     endIndex : number,
-    word: string
+    word: string, // surface_form
+    basic_form: string,
+    ankiAnnotationType: AnnotationType, // the based annotation type not affected by change from the user.
 }
 
 export interface CardTextFieldValues {

@@ -15,6 +15,8 @@ import {
     CopyHistoryItem,
     AnkiDialogSettings,
     AnkiExportMode,
+    AnnotationType,
+    Annotation,
 } from './model';
 import { AsbPlayerToVideoCommandV2 } from './command';
 
@@ -155,6 +157,30 @@ export interface AddAnnotationsMessage extends Message {
 
 export interface AddAnnotationsMessageFromApp extends MessageWithId {
     readonly command: 'add-annotations';
+    readonly subtitles: SubtitleModel[];
+}
+
+// export interface setWordMessage extends Message {
+//     readonly command: 'set-word-annotation';
+//     readonly word: string;
+// }
+
+// export interface setWordMessageFromApp extends MessageWithId {
+//     readonly command: 'set-word-annotation';
+//     readonly word: string;
+// }
+
+export interface setWordAndSubtitlesMessage extends Message {
+    readonly command: 'set-word-annotation-with-subtitles';
+    readonly currentAnnotation: Annotation,
+    readonly nextAnnotation: AnnotationType,
+    readonly subtitles: SubtitleModel[];
+}
+
+export interface setWordAndSubtitlesMessageFromApp extends MessageWithId {
+    readonly command: 'set-word-annotation-with-subtitles';
+    readonly currentAnnotation: Annotation,
+    readonly nextAnnotation: AnnotationType,
     readonly subtitles: SubtitleModel[];
 }
 

@@ -1,4 +1,5 @@
 import {
+    Annotation,
     AnnotationType,
     AutoPauseContext,
     CopyToClipboardMessage,
@@ -365,7 +366,7 @@ export default class SubtitleController {
 
             const subtitlesAreNew =
                 this.showingSubtitles === undefined ||
-                !this._arrayEquals(showingSubtitles, this.showingSubtitles, (a, b) => a.index === b.index);
+                !this._arrayEquals(showingSubtitles, this.showingSubtitles, (a, b) => a.index === b.index && a.annotations === b.annotations);
 
             if (subtitlesAreNew) {
                 this.showingSubtitles = showingSubtitles;
@@ -409,6 +410,65 @@ export default class SubtitleController {
         } else {
             this._setSubtitlesHtml(this.bottomSubtitlesElementOverlay, this._buildSubtitlesHtml(subtitles));
         }
+
+        let words = document.getElementsByClassName("word");
+        for (const word of words){
+            word.addEventListener("click", (e) => {
+                let element = e.target as HTMLElement;
+                this._onWordClick(element.innerText);
+            });
+        }
+    }
+    
+    private _onWordClick(word:string){
+        let annotation: Annotation | undefined = undefined;
+        let doBreak: Boolean = false;
+        let subtitles = this.subtitles;
+        for(const subtitle of subtitles) {
+            if (!subtitle.annotations ){
+                return;
+            }
+            for (const subtitleAnnotation of subtitle.annotations) {
+                if (subtitleAnnotation.word === word) {
+                    annotation = subtitleAnnotation;
+                    doBreak = true;
+                    break;
+                }
+            }
+            if (doBreak) {
+                break;
+            }
+        }
+
+        if (annotation === undefined) {
+            return;
+        }
+        
+        let nextAnnotation : AnnotationType;
+        if (annotation.ankiAnnotationType === AnnotationType.known || annotation.ankiAnnotationType === AnnotationType.unknown) {
+            nextAnnotation = annotation.annotationType === AnnotationType.known ? AnnotationType.unknown : AnnotationType.known; 
+        }else {
+            nextAnnotation = annotation.annotationType === AnnotationType.known ? AnnotationType.notInDeck : AnnotationType.known; 
+        }
+        
+        
+        chrome.runtime.sendMessage(
+            {
+                sender: 'player',
+                message: {
+                    command: 'set-word-annotation-with-subtitles',
+                    currentAnnotation: annotation,
+                    nextAnnotation: nextAnnotation,
+                    subtitles: subtitles
+                },
+            },
+            (response) => {
+                if (response) {
+                    this.subtitles = response;
+                }
+            }
+        )
+        
     }
 
     private _resetUnblurState() {
@@ -495,7 +555,6 @@ export default class SubtitleController {
     }
     
     private _buildTextHtmlWithColor(subtitle: SubtitleModel, track?: number): string {
-        console.log(subtitle);
         if(!subtitle.annotations || subtitle.annotations.length <= 0){
             return this._buildTextHtml(subtitle.text);
         }
@@ -515,8 +574,7 @@ export default class SubtitleController {
                     className = 'notInDeckWords';
                     break;
             }
-
-            coloredText += `<span class="${className}">${annotation.word}</span>`;
+            coloredText += `<span class="word ${className}">${annotation.word}</span>`;
         }
 
         return `<span data-track="${track ?? 0}" class="${this._subtitleClasses(track)}" style="${this._subtitleStyles(track)}">${coloredText}</span>`;
