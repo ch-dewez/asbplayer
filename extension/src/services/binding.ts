@@ -1389,7 +1389,7 @@ export default class Binding {
                         console.error(response.error);
                     } else {
                         console.log("update subtitles");
-                        this.subtitleController.subtitles = response.subtitles;
+                        this.subtitleController.subtitles = response;
                     }
                 }
             );

@@ -22,6 +22,7 @@ import {
     CopySubtitleWithAdditionalFieldsMessage,
     CardTextFieldValues,
     AnnotationType,
+    Annotation,
 } from '@project/common';
 import { AsbplayerSettings } from '@project/common/settings';
 import {
@@ -49,7 +50,7 @@ import { MineSubtitleParams } from '../hooks/use-app-web-socket-client';
 import { isMobile } from 'react-device-detect';
 import ChromeExtension, { ExtensionMessage } from '../services/chrome-extension';
 import { MineSubtitleCommand, WebSocketClient } from '../../web-socket-client';
-import {setWordsStateWithSubtitles} from '@project/common/anki'
+import {setWordsAnnotationWithSubtitles} from '@project/common/anki'
 
 let lastKnownWidth: number | undefined;
 export const minSubtitlePlayerWidth = 200;
@@ -264,7 +265,7 @@ enum SelectionState {
 
 interface SubtitleTextWithColorProps  {
     subtitle:SubtitleModel,
-    onWordClick:(word:string, currentState:AnnotationType) => void,
+    onWordClick:(annotatation:Annotation) => void,
 }
 
 const SubtitleTextWithColor = React.memo(function SubtitleTextWithColor({
@@ -287,17 +288,17 @@ const SubtitleTextWithColor = React.memo(function SubtitleTextWithColor({
             switch (annotation.annotationType) {
                 case (AnnotationType.known) :{
                     tempWords.push(
-                        <div className={classes['knownWords']} onClick={() => onWordClick(annotation.basic_form, annotation.annotationType)}>{word}</div>
+                        <div className={classes['knownWords']} onClick={() => onWordClick(annotation)} key={word+Math.random()}>{word}</div>
                     )
                     break;
                 }case (AnnotationType.unknown) :{
                     tempWords.push(
-                        <div className={classes['unknownWords']} onClick={() => onWordClick(annotation.basic_form, annotation.annotationType)}>{word}</div>
+                        <div className={classes['unknownWords']} onClick={() => onWordClick(annotation)} key={word+Math.random()}>{word}</div>
                     )
                     break; 
                 }case (AnnotationType.notInDeck) :{
                     tempWords.push(
-                        <div className={classes['notInDeckWords']} onClick={() => onWordClick(annotation.basic_form, annotation.annotationType)}>{word}</div>
+                        <div className={classes['notInDeckWords']} onClick={() => onWordClick(annotation)} key={word+Math.random()}>{word}</div>
                     )
                     break; 
                 }
@@ -305,7 +306,7 @@ const SubtitleTextWithColor = React.memo(function SubtitleTextWithColor({
         }
 
         setWords(tempWords);
-    }, [subtitle]);
+    }, [JSON.stringify(subtitle), onWordClick]);
     return <div key={subtitle.start}>{words}</div>;
 });
 
@@ -319,7 +320,7 @@ interface SubtitleRowProps extends TableRowProps {
     subtitleRef: RefObject<HTMLTableRowElement>;
     onClickSubtitle: (index: number) => void;
     onCopySubtitle: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>, index: number) => void;
-    onWordClick: (word:string, currnetState: AnnotationType) => void;
+    onWordClick: (annotation: Annotation) => void;
 }
 
 const SubtitleRow = React.memo(function SubtitleRow({
@@ -362,7 +363,7 @@ const SubtitleRow = React.memo(function SubtitleRow({
                 </span>
             )
         )
-    }, [subtitle, textRef, window.screen.availWidth]);
+    }, [JSON.stringify(subtitle), textRef, window.screen.availWidth]);
 
     let rowClassName: string;
 
@@ -452,6 +453,7 @@ interface SubtitlePlayerProps {
     onResizeEnd?: () => void;
     autoPauseContext: AutoPauseContext;
     subtitles?: DisplaySubtitleModel[];
+    onSubtitles: (subtitles: DisplaySubtitleModel[]) => void;
     subtitleCollection?: SubtitleCollection<DisplaySubtitleModel>;
     length: number;
     jumpToSubtitle?: SubtitleModel;
@@ -485,6 +487,7 @@ export default function SubtitlePlayer({
     onResizeEnd,
     autoPauseContext,
     subtitles,
+    onSubtitles,
     subtitleCollection,
     length,
     jumpToSubtitle,
@@ -1203,12 +1206,20 @@ export default function SubtitlePlayer({
         settings.surroundingSubtitlesTimeRadius,
         onCopy,
     ]);
-    
-    const handleClickOnWord = async (word:string, currentState: AnnotationType) => {
-        subtitles = await setWordsStateWithSubtitles(word, AnnotationType.known, currentState, subtitles as SubtitleModel[]) as DisplaySubtitleModel[];
-    }
 
-    
+    const handleClickOnWord = React.useCallback(async (annotation: Annotation) => {
+        let nextAnnotation: AnnotationType;
+        if (annotation.ankiAnnotationType === AnnotationType.known || annotation.ankiAnnotationType === AnnotationType.unknown) {
+            nextAnnotation = annotation.annotationType === AnnotationType.known ? AnnotationType.unknown : AnnotationType.known;
+        } else {
+            nextAnnotation = annotation.annotationType === AnnotationType.known ? AnnotationType.notInDeck : AnnotationType.known;
+        }
+
+        console.log(subtitleListRef);
+        const newSubtitles = await extension.setWordStateAndSubtitles(annotation, nextAnnotation, subtitleListRef.current as SubtitleModel[]) as DisplaySubtitleModel[];
+        
+        onSubtitles([...newSubtitles]);
+    }, [onSubtitles]);
 
     let subtitleTable: ReactNode | null = null;
 

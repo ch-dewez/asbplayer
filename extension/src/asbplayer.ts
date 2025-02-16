@@ -128,11 +128,17 @@ window.addEventListener('message', async (event) => {
                 });
                 break;
             case 'add-annotations':
-                let result = await chrome.runtime.sendMessage(command);
                 sendMessageToPlayer({
                     messageId: command.message.messageId,
-                    response: result,
-                })
+                    response: await chrome.runtime.sendMessage(command),
+                });
+                break;
+            case 'set-word-annotation-with-subtitles':
+                sendMessageToPlayer({
+                    messageId: command.message.messageId,
+                    response: await chrome.runtime.sendMessage(command),
+                });
+                break;
             default:
                 chrome.runtime.sendMessage(command);
                 break;

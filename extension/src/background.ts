@@ -61,6 +61,7 @@ import DeleteCopyHistoryHandler from './handlers/asbplayerv2/delete-copy-history
 import ClearCopyHistoryHandler from './handlers/asbplayerv2/clear-copy-history-handler';
 import SaveCopyHistoryHandler from './handlers/asbplayerv2/save-copy-history-handler';
 import AddAnnotationsHandler from './handlers/asbplayerv2/add-annotations-handler';
+import SetWordAnnotationWithSubtitlesHandler from './handlers/asbplayerv2/set-word-annotation-handler';
 
 if (!isFirefoxBuild) {
     chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
@@ -159,6 +160,7 @@ const handlers: CommandHandler[] = [
     new CurrentTabHandler(),
     new MobileOverlayForwarderHandler(),
     new AddAnnotationsHandler(settings),
+    new SetWordAnnotationWithSubtitlesHandler(),
 ];
 
 chrome.runtime.onMessage.addListener((request: Command<Message>, sender, sendResponse) => {

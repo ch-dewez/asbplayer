@@ -32,8 +32,9 @@ import {
     SubtitleModel,
     Command,
     AddAnnotationsMessageFromApp,
-    setWordMessageFromApp,
     setWordAndSubtitlesMessageFromApp,
+    AnnotationType,
+    Annotation,
 } from '@project/common';
 import { AsbplayerSettings, Profile } from '@project/common/settings';
 import { GlobalState } from '@project/common/global-state';
@@ -335,35 +336,23 @@ export default class ChromeExtension {
             },
         };
         window.postMessage(command);
-        return this._createResponsePromise(messageId) as Promise<{subtitles:SubtitleModel[]}>;
+        return this._createResponsePromise(messageId) as Promise<SubtitleModel[]>;
     }
 
-    setWordState(word:string){
-        const messageId = uuidv4();
-        const command: Command<setWordMessageFromApp> = {
-            sender: 'player',
-            message: {
-                command: 'set-word-state',
-                word: word,
-                messageId,
-            },
-        };
-        window.postMessage(command);
-    }
-    
-    setWordStateAndSubtitles(subtitles:SubtitleModel[], word:string){
+    setWordStateAndSubtitles(currentAnnotation:Annotation, nextAnnotation:AnnotationType, subtitles:SubtitleModel[]){
         const messageId = uuidv4();
         const command: Command<setWordAndSubtitlesMessageFromApp> = {
             sender: 'player',
             message: {
-                command: 'set-word-state',
-                word: word,
+                command: 'set-word-annotation-with-subtitles',
+                currentAnnotation: currentAnnotation,
+                nextAnnotation,
                 subtitles: subtitles,
                 messageId,
             },
         };
         window.postMessage(command);
-        return this._createResponsePromise(messageId) as Promise<{subtitles:SubtitleModel[]}>;
+        return this._createResponsePromise(messageId) as Promise<SubtitleModel[]>;
     }
 
     requestCopyHistory(count: number) {
