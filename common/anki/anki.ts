@@ -643,15 +643,7 @@ export class Anki {
         return {
             action: 'findNotes',
             params: {
-                query:
-                    '*>' +
-                    this._escapeQuery(word) +
-                    '<*' +
-                    ' OR ' +
-                    '*:' +
-                    this.settingsProvider.wordField +
-                    ':' +
-                    this._escapeQuery(word),
+                query: '*:' + '*>' + this._escapeQuery(word) + '<*' + ' OR ' + '*:' + this._escapeQuery(word),
             }, // both combine with OR
             version: version ? version : 6,
         };
