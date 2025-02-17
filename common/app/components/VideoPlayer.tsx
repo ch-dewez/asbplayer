@@ -201,11 +201,6 @@ const SubtitleLineWithColor = React.memo(function SubtitleTextWithColor({
     const [words, setWords] = useState<ReactElement[]>([]);
 
     useEffect(() => {
-        if (!subtitle.annotations || subtitle.annotations.length <= 0) {
-            setWords([<span key={subtitle.text}>{subtitle.text}</span>]);
-            return;
-        }
-
         let tempWords: ReactElement[] = [];
 
         //get the start and the end of the current line
@@ -222,6 +217,12 @@ const SubtitleLineWithColor = React.memo(function SubtitleTextWithColor({
 
             start += line.length;
         }
+        
+        if (!subtitle.annotations || subtitle.annotations.length <= 0) {
+            setWords([<span key={subtitle.text}>{lines[lineIndex]}</span>]);
+            return;
+        }
+
 
         for (const annotation of subtitle.annotations) {
             if (annotation.endIndex <= start || annotation.startIndex > end) {
