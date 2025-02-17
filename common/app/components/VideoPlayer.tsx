@@ -869,25 +869,11 @@ export default function VideoPlayer({
 
             showSubtitles = showSubtitles.sort((s1, s2) => s1.track - s2.track);
 
-            const hasBothAnnotations =
-                showSubtitles[0]?.annotations !== undefined && showSubtitlesRef.current[0]?.annotations !== undefined;
-            const hasOneOfThemAnnotations =
-                showSubtitles[0]?.annotations !== undefined || showSubtitlesRef.current[0]?.annotations !== undefined;
-            let areArrayNotEquals =
-                (!hasBothAnnotations && hasOneOfThemAnnotations) ||
-                !arrayEquals(
-                    showSubtitles,
-                    showSubtitlesRef.current,
-                    (s1, s2) =>
-                        s1.index === s2.index ||
-                        (hasBothAnnotations
-                            ? arrayEquals(
-                                  s1.annotations,
-                                  s2.annotations,
-                                  (a1, a2) => a1.annotationType === a2.annotationType
-                              )
-                            : true)
-                );
+            let areArrayNotEquals = !arrayEquals(
+                showSubtitles,
+                showSubtitlesRef.current,
+                (s1, s2) => s1.index === s2.index && s1.annotaions === s2.annotations
+            );
             if (areArrayNotEquals) {
                 setShowSubtitles(showSubtitles);
                 if (showSubtitles.length > 0 && miscSettings.autoCopyCurrentSubtitle && document.hasFocus()) {
