@@ -152,7 +152,7 @@ export interface PublishCardMessage extends Message, CardModel {
 
 export interface AddAnnotationsMessage extends Message {
     readonly command: 'add-annotations';
-    readonly subtitles: SubtitleModel[]
+    readonly subtitles: SubtitleModel[];
 }
 
 export interface AddAnnotationsMessageFromApp extends MessageWithId {
@@ -172,15 +172,15 @@ export interface AddAnnotationsMessageFromApp extends MessageWithId {
 
 export interface setWordAndSubtitlesMessage extends Message {
     readonly command: 'set-word-annotation-with-subtitles';
-    readonly currentAnnotation: Annotation,
-    readonly nextAnnotation: AnnotationType,
+    readonly currentAnnotation: Annotation;
+    readonly nextAnnotation: AnnotationType;
     readonly subtitles: SubtitleModel[];
 }
 
 export interface setWordAndSubtitlesMessageFromApp extends MessageWithId {
     readonly command: 'set-word-annotation-with-subtitles';
-    readonly currentAnnotation: Annotation,
-    readonly nextAnnotation: AnnotationType,
+    readonly currentAnnotation: Annotation;
+    readonly nextAnnotation: AnnotationType;
     readonly subtitles: SubtitleModel[];
 }
 

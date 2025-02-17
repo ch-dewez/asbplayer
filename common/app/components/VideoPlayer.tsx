@@ -56,7 +56,7 @@ import { useFullscreen } from '../hooks/use-fullscreen';
 import MobileVideoOverlay from '@project/common/components/MobileVideoOverlay';
 import { CachedLocalStorage } from '../services/cached-local-storage';
 import useLastScrollableControlType from '../../hooks/use-last-scrollable-control-type';
-import { getBasicFormFromText } from "@project/common/japanese-tokenizer/tokenizer"
+import { getBasicFormFromText } from '@project/common/japanese-tokenizer/tokenizer';
 
 const overlayContainerHeight = 48;
 
@@ -187,66 +187,81 @@ const showingSubtitleHtml = (
     return wrappedText;
 };
 
-interface SubtitleLineWithColorProps  {
-    subtitle:SubtitleModel,
-    lineIndex:number,
-    onWordClick:(annotatation:Annotation) => void,
+interface SubtitleLineWithColorProps {
+    subtitle: SubtitleModel;
+    lineIndex: number;
+    onWordClick: (annotatation: Annotation) => void;
 }
-
 
 const SubtitleLineWithColor = React.memo(function SubtitleTextWithColor({
     subtitle,
-    lineIndex, 
+    lineIndex,
     onWordClick,
 }: SubtitleLineWithColorProps) {
     const [words, setWords] = useState<ReactElement[]>([]);
-    
+
     useEffect(() => {
-        if (!subtitle.annotations || subtitle.annotations.length <= 0){
-            setWords([<span>{subtitle.text}</span>])
+        if (!subtitle.annotations || subtitle.annotations.length <= 0) {
+            setWords([<span key={subtitle.text}>{subtitle.text}</span>]);
             return;
         }
 
-        let tempWords:ReactElement[] = []; 
-        
-        //get the start and the end of the current line 
+        let tempWords: ReactElement[] = [];
+
+        //get the start and the end of the current line
         let start = 0;
         let end = 0;
-        const lines = subtitle.text.split('\n')
+        const lines = subtitle.text.split('\n');
         for (let i = 0; i <= lineIndex; i++) {
             const line = lines[i];
-            
-            if (i==lineIndex){
-                end=start+line.length;
-                break
+
+            if (i == lineIndex) {
+                end = start + line.length;
+                break;
             }
-            
-            start += line.length
+
+            start += line.length;
         }
 
-        for (const annotation of subtitle.annotations){
-            if(annotation.endIndex <= start || annotation.startIndex > end){
+        for (const annotation of subtitle.annotations) {
+            if (annotation.endIndex <= start || annotation.startIndex > end) {
                 //word not in the current line
                 continue;
             }
-            
+
             let word = annotation.word;
             switch (annotation.annotationType) {
-                case (AnnotationType.known) :{
+                case AnnotationType.known: {
                     tempWords.push(
-                        <span className="knownWords" onClick={() => onWordClick(annotation)} key={word+Math.random()}>{word}</span>
-                    )
+                        <span className="knownWords" onClick={() => onWordClick(annotation)} key={word + Math.random()}>
+                            {word}
+                        </span>
+                    );
                     break;
-                }case (AnnotationType.unknown) :{
+                }
+                case AnnotationType.unknown: {
                     tempWords.push(
-                        <span className="unknownWords" onClick={() => onWordClick(annotation)} key={word+Math.random()}>{word}</span>
-                    )
-                    break; 
-                }case (AnnotationType.notInDeck) :{
+                        <span
+                            className="unknownWords"
+                            onClick={() => onWordClick(annotation)}
+                            key={word + Math.random()}
+                        >
+                            {word}
+                        </span>
+                    );
+                    break;
+                }
+                case AnnotationType.notInDeck: {
                     tempWords.push(
-                        <span className="notInDeckWords" onClick={() => onWordClick(annotation)} key={word+Math.random()}>{word}</span>
-                    )
-                    break; 
+                        <span
+                            className="notInDeckWords"
+                            onClick={() => onWordClick(annotation)}
+                            key={word + Math.random()}
+                        >
+                            {word}
+                        </span>
+                    );
+                    break;
                 }
             }
         }
@@ -273,10 +288,9 @@ const ShowingSubtitle = ({
     imageBasedSubtitleScaleFactor,
     className,
     onMouseOver,
-    onWordClick
+    onWordClick,
 }: ShowingSubtitleProps) => {
     let content;
-
 
     if (subtitle.textImage) {
         // can't do anything about that
@@ -291,7 +305,11 @@ const ShowingSubtitle = ({
         const lines = subtitle.text.split('\n');
         content = lines.map((line, index) => (
             <span key={index} className="subtitle-line" style={subtitleStyles}>
-                <SubtitleLineWithColor subtitle={subtitle} lineIndex={index} onWordClick={onWordClick}></SubtitleLineWithColor>
+                <SubtitleLineWithColor
+                    subtitle={subtitle}
+                    lineIndex={index}
+                    onWordClick={onWordClick}
+                ></SubtitleLineWithColor>
             </span>
         ));
     }
@@ -509,7 +527,6 @@ export default function VideoPlayer({
     const [, forceRender] = useState<any>();
     const [mineIntervalStartTimestamp, setMineIntervalStartTimestamp] = useState<number>();
 
-
     useEffect(() => {
         setMiscSettings(settings);
         setSubtitleSettings(settings);
@@ -641,7 +658,7 @@ export default function VideoPlayer({
                 track: s.track,
                 index: i,
 
-                annotations: s.annotations
+                annotations: s.annotations,
             }))
         );
     }, []);
@@ -708,17 +725,14 @@ export default function VideoPlayer({
             setSubtitles(indexedSubtitles);
             setTrackCount(Math.max(...subtitles.map((s) => s.track)) + 1);
 
-            
-            if (indexedSubtitles !== undefined){
-
-                extension.getAnnotationsFromSubtitles(indexedSubtitles)
-                .then((result)=> {
+            if (indexedSubtitles !== undefined) {
+                extension.getAnnotationsFromSubtitles(indexedSubtitles).then((result) => {
                     if (!result) {
                         return;
                     }
                     let displaySubtitle = result as IndexedSubtitleModel[];
                     setSubtitles(displaySubtitle);
-                })
+                });
             }
 
             if (subtitles && subtitles.length > 0) {
@@ -855,10 +869,21 @@ export default function VideoPlayer({
 
             showSubtitles = showSubtitles.sort((s1, s2) => s1.track - s2.track);
 
-            const hasBothAnnotations = showSubtitles[0]?.annotations !== undefined && showSubtitlesRef.current[0]?.annotations !== undefined;
-            const hasOneOfThemAnnotations = showSubtitles[0]?.annotations !== undefined || showSubtitlesRef.current[0]?.annotations !== undefined;
-            let areArrayEquals = (!hasBothAnnotations && hasOneOfThemAnnotations) 
-                || !arrayEquals(showSubtitles, showSubtitlesRef.current, (s1, s2) => s1.index === s2.index || hasBothAnnotations ? arrayEquals(s1.annotations, s2.annotations, (a1, a2) => a1.annotationType === a2.annotationType) : true); 
+            const hasBothAnnotations =
+                showSubtitles[0]?.annotations !== undefined && showSubtitlesRef.current[0]?.annotations !== undefined;
+            const hasOneOfThemAnnotations =
+                showSubtitles[0]?.annotations !== undefined || showSubtitlesRef.current[0]?.annotations !== undefined;
+            let areArrayEquals =
+                (!hasBothAnnotations && hasOneOfThemAnnotations) ||
+                !arrayEquals(showSubtitles, showSubtitlesRef.current, (s1, s2) =>
+                    s1.index === s2.index || hasBothAnnotations
+                        ? arrayEquals(
+                              s1.annotations,
+                              s2.annotations,
+                              (a1, a2) => a1.annotationType === a2.annotationType
+                          )
+                        : true
+                );
             if (areArrayEquals) {
                 setShowSubtitles(showSubtitles);
                 if (showSubtitles.length > 0 && miscSettings.autoCopyCurrentSubtitle && document.hasFocus()) {
@@ -1076,7 +1101,7 @@ export default function VideoPlayer({
                 end: end,
                 originalEnd: end,
                 track: 0,
-                annotations:[]
+                annotations: [],
             };
 
             return { currentSubtitle, surroundingSubtitles: mockSurroundingSubtitles(currentSubtitle, length, 5000) };
@@ -1231,7 +1256,7 @@ export default function VideoPlayer({
                         originalEnd: endTimestamp,
                         track: 0,
 
-                        annotations: []
+                        annotations: [],
                     };
                     let surroundingSubtitles: SubtitleModel[];
 
@@ -1613,20 +1638,28 @@ export default function VideoPlayer({
         saveLastControlType,
     });
 
-
-    const handleClickOnWord = async (annotation:Annotation) => {
-        let nextAnnotation : AnnotationType;
-        if (!subtitles){
+    const handleClickOnWord = async (annotation: Annotation) => {
+        let nextAnnotation: AnnotationType;
+        if (!subtitles) {
             return;
         }
-        if (annotation.ankiAnnotationType === AnnotationType.known || annotation.ankiAnnotationType === AnnotationType.unknown) {
-            nextAnnotation = annotation.annotationType === AnnotationType.known ? AnnotationType.unknown : AnnotationType.known; 
-        }else {
-            nextAnnotation = annotation.annotationType === AnnotationType.known ? AnnotationType.notInDeck : AnnotationType.known; 
+        if (
+            annotation.ankiAnnotationType === AnnotationType.known ||
+            annotation.ankiAnnotationType === AnnotationType.unknown
+        ) {
+            nextAnnotation =
+                annotation.annotationType === AnnotationType.known ? AnnotationType.unknown : AnnotationType.known;
+        } else {
+            nextAnnotation =
+                annotation.annotationType === AnnotationType.known ? AnnotationType.notInDeck : AnnotationType.known;
         }
-        const newSubtitles = await extension.setWordStateAndSubtitles(annotation, nextAnnotation, subtitles as SubtitleModel[]) as IndexedSubtitleModel[];
+        const newSubtitles = (await extension.setWordStateAndSubtitles(
+            annotation,
+            nextAnnotation,
+            subtitles as SubtitleModel[]
+        )) as IndexedSubtitleModel[];
         setSubtitles([...newSubtitles]);
-    }
+    };
 
     // If the video player is taking up the entire screen, then the subtitle player isn't showing
     // This code assumes some behavior in Player, namely that the subtitle player is automatically hidden
@@ -1660,8 +1693,14 @@ export default function VideoPlayer({
         );
     const subtitleElementsWithAlignment = (alignment: SubtitleAlignment) =>
         showSubtitles.filter((s) => subtitleAlignmentForTrack(s.track) === alignment).map(elementForSubtitle);
-    const topSubtitleElements = useMemo(() => displaySubtitles ? subtitleElementsWithAlignment('top') : [], [showSubtitles]);
-    const bottomSubtitleElements = useMemo(() => displaySubtitles ? subtitleElementsWithAlignment('bottom') : [], [showSubtitles]);
+    const topSubtitleElements = useMemo(
+        () => (displaySubtitles ? subtitleElementsWithAlignment('top') : []),
+        [showSubtitles]
+    );
+    const bottomSubtitleElements = useMemo(
+        () => (displaySubtitles ? subtitleElementsWithAlignment('bottom') : []),
+        [showSubtitles]
+    );
     const mobileOverlayModel = () => {
         if (!isMobile || (playing() && mineIntervalStartTimestamp === undefined)) {
             return undefined;
@@ -1735,7 +1774,6 @@ export default function VideoPlayer({
             )}
             {bottomSubtitleElements.length > 0 && (
                 <SubtitleContainer
-                    
                     alignment={'bottom'}
                     subtitleSettings={subtitleSettings}
                     baseOffset={baseBottomSubtitleOffset}

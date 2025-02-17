@@ -6,11 +6,14 @@ export default class SetWordAnnotationWithSubtitlesHandler implements CommandHan
     readonly sender = 'player';
     readonly command = 'set-word-annotation-with-subtitles';
 
-    handle(command: Command<Message>, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void): boolean {
+    handle(
+        command: Command<Message>,
+        sender: chrome.runtime.MessageSender,
+        sendResponse: (response?: any) => void
+    ): boolean {
         const { subtitles, nextAnnotation, currentAnnotation } = command.message as setWordAndSubtitlesMessage;
 
-        setWordsAnnotationWithSubtitles(currentAnnotation, nextAnnotation, subtitles)
-        .then((result) => {
+        setWordsAnnotationWithSubtitles(currentAnnotation, nextAnnotation, subtitles).then((result) => {
             sendResponse(result);
         });
 

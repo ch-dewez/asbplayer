@@ -1373,8 +1373,7 @@ export default class Binding {
         this.subtitleController.subtitleFileNames = subtitleFileNames;
         this.subtitleController.cacheHtml();
 
-        if (!subtitles[0].annotations){
-            
+        if (!subtitles[0].annotations) {
             chrome.runtime.sendMessage(
                 {
                     sender: 'player',
@@ -1384,11 +1383,10 @@ export default class Binding {
                     },
                 },
                 (response) => {
-
                     if (response.error) {
                         console.error(response.error);
                     } else {
-                        console.log("update subtitles");
+                        console.log('update subtitles');
                         this.subtitleController.subtitles = response;
                     }
                 }

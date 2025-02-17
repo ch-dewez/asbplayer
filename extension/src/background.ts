@@ -170,7 +170,6 @@ chrome.runtime.onMessage.addListener((request: Command<Message>, sender, sendRes
             (typeof handler.sender === 'object' && handler.sender.includes(request.sender))
         ) {
             if (handler.command === null || handler.command === request.message.command) {
-                
                 if (handler.handle(request, sender, sendResponse) === true) {
                     return true;
                 }

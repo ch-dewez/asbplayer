@@ -139,12 +139,17 @@ export default function SidePanel({ settings, extension }: Props) {
                         const subs = response.subtitles;
                         const length = subs.length > 0 ? subs[subs.length - 1].end : 0;
                         setSyncedVideoElement(lastSyncedVideoTab);
-                        const displaySubs = subs.map((s, index) => ({ ...s, index, displayTime: timeDurationDisplay(s.start, length) } as DisplaySubtitleModel))
-                        setSubtitles(
-                           displaySubs 
+                        const displaySubs = subs.map(
+                            (s, index) =>
+                                ({
+                                    ...s,
+                                    index,
+                                    displayTime: timeDurationDisplay(s.start, length),
+                                } as DisplaySubtitleModel)
                         );
+                        setSubtitles(displaySubs);
                         setSubtitleFileNames(response.subtitleFileNames);
-                        
+
                         chrome.runtime.sendMessage(
                             {
                                 sender: 'player',
@@ -162,7 +167,6 @@ export default function SidePanel({ settings, extension }: Props) {
                                 }
                             }
                         );
-
                     }
                 }
             }

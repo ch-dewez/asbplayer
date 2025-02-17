@@ -186,33 +186,32 @@
 .asbplayer-mobile-video-overlay {
 }
 
-
 .knownWords,
 .notInDeckWords,
 .unknownWords {
-  display: inline-block; /* stays inline yet allows pseudo-elements to work */
-  position: relative;    /* necessary for positioning the :after element */
-  vertical-align: baseline; /* align with adjacent text if needed */
+    display: inline-block; /* stays inline yet allows pseudo-elements to work */
+    position: relative; /* necessary for positioning the :after element */
+    vertical-align: baseline; /* align with adjacent text if needed */
 }
 
 .knownWords:after,
 .notInDeckWords:after,
 .unknownWords:after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: -3px;
-  width: calc(100% - 3px);
-  height: 0.1em;
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -3px;
+    width: calc(100% - 3px);
+    height: 0.1em;
 }
 
 .knownWords:after {
-   background-color: green ; 
+    background-color: green;
 }
 .unknownWords:after {
-   background-color: red ; 
+    background-color: red;
 }
 .notInDeckWords:after {
-   background-color: black; 
+    background-color: black;
 }

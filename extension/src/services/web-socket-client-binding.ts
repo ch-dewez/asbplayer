@@ -1,5 +1,10 @@
 import { SettingsProvider, ankiSettingsKeys } from '@project/common/settings';
-import { findKnownWordsCommand, LoadSubtitlesCommand, MineSubtitleCommand, WebSocketClient } from '@project/common/web-socket-client';
+import {
+    findKnownWordsCommand,
+    LoadSubtitlesCommand,
+    MineSubtitleCommand,
+    WebSocketClient,
+} from '@project/common/web-socket-client';
 import TabRegistry from './tab-registry';
 import {
     CopySubtitleMessage,
@@ -124,8 +129,8 @@ export const bindWebSocketClient = async (settings: SettingsProvider, tabRegistr
             return toggleVideoSelectCommand;
         });
     };
-    client.onFindKnownWords = async (command:findKnownWordsCommand)=> {
-        let knownWords:string[] = [];
+    client.onFindKnownWords = async (command: findKnownWordsCommand) => {
+        let knownWords: string[] = [];
         const text = command.body.text;
         chrome.runtime.sendMessage(
             {
@@ -142,10 +147,10 @@ export const bindWebSocketClient = async (settings: SettingsProvider, tabRegistr
                     knownWords = response.knownWords.join(' ');
                 }
             }
-        )
+        );
 
         return knownWords;
-    }
+    };
 };
 
 export const unbindWebSocketClient = () => {

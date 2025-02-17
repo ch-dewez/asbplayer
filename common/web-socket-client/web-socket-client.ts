@@ -122,7 +122,7 @@ export class WebSocketClient {
                             body: {},
                         };
                         this._socket?.send(JSON.stringify(response));
-                    }else if (payload.command === 'find-known-words'){
+                    } else if (payload.command === 'find-known-words') {
                         const messageId = payload.messageId;
                         const knownWords = (await this.onFindKnownWords?.(payload)) ?? [];
                         const response: Response<findKnownWordsResponseBody> = {

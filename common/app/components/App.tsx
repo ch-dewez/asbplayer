@@ -1053,19 +1053,17 @@ function App({
                         setFileName(subtitleFileName.substring(0, subtitleFileName.lastIndexOf('.')));
                         const length = subtitles.length > 0 ? subtitles[subtitles.length - 1].end : 0;
                         let newSubtitles = subtitles.map((s, i) => ({
-                                ...s,
-                                displayTime: timeDurationDisplay(s.start, length),
-                                index: i,
-                            }));
+                            ...s,
+                            displayTime: timeDurationDisplay(s.start, length),
+                            index: i,
+                        }));
                         setSubtitles(newSubtitles);
                         setTab(videoElement);
-                        if (!newSubtitles[0].annotations){
-
-                            extension.getAnnotationsFromSubtitles(newSubtitles)
-                            .then((result)=>{
+                        if (!newSubtitles[0].annotations) {
+                            extension.getAnnotationsFromSubtitles(newSubtitles).then((result) => {
                                 let subtitlesWithAnnotations = result as DisplaySubtitleModel[];
                                 if (subtitlesWithAnnotations === undefined) {
-                                    console.log("display sub undefined");
+                                    console.log('display sub undefined');
                                     return;
                                 }
                                 setSubtitles(subtitlesWithAnnotations);

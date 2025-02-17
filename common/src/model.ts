@@ -32,19 +32,19 @@ export interface SubtitleModel {
     annotations?: Annotation[];
 }
 
-export enum AnnotationType{
+export enum AnnotationType {
     notInDeck, //not in deck
-    unknown,//less < 1 day
-    known,// more than 1 day, i'm not making a mature/recent types because a card that is recent can be changed in mature so if I store the word I would need to check and change the type 
+    unknown, //less < 1 day
+    known, // more than 1 day, i'm not making a mature/recent types because a card that is recent can be changed in mature so if I store the word I would need to check and change the type
 }
 
 export interface Annotation {
-    annotationType : AnnotationType, // affected by change from the user
-    startIndex : number,
-    endIndex : number,
-    word: string, // surface_form
-    basic_form: string,
-    ankiAnnotationType: AnnotationType, // the based annotation type not affected by change from the user.
+    annotationType: AnnotationType; // affected by change from the user
+    startIndex: number;
+    endIndex: number;
+    word: string; // surface_form
+    basic_form: string;
+    ankiAnnotationType: AnnotationType; // the based annotation type not affected by change from the user.
 }
 
 export interface CardTextFieldValues {

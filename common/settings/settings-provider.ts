@@ -127,7 +127,7 @@ export const defaultSettings: AsbplayerSettings = {
     customAnkiFields: {},
     tags: [],
     imageBasedSubtitleScaleFactor: 1,
-    streamingAppUrl: 'localhost:3000/asbplayer',
+    streamingAppUrl: 'https://ch-dewez.github.io/asbplayer',
     streamingDisplaySubtitles: true,
     streamingRecordMedia: true,
     streamingTakeScreenshot: true,

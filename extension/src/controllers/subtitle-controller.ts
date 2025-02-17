@@ -109,7 +109,6 @@ export default class SubtitleController {
             returnNextToShow: true,
         });
 
-
         this.autoPauseContext.clear();
     }
 
@@ -366,7 +365,11 @@ export default class SubtitleController {
 
             const subtitlesAreNew =
                 this.showingSubtitles === undefined ||
-                !this._arrayEquals(showingSubtitles, this.showingSubtitles, (a, b) => a.index === b.index && a.annotations === b.annotations);
+                !this._arrayEquals(
+                    showingSubtitles,
+                    this.showingSubtitles,
+                    (a, b) => a.index === b.index && a.annotations === b.annotations
+                );
 
             if (subtitlesAreNew) {
                 this.showingSubtitles = showingSubtitles;
@@ -411,21 +414,21 @@ export default class SubtitleController {
             this._setSubtitlesHtml(this.bottomSubtitlesElementOverlay, this._buildSubtitlesHtml(subtitles));
         }
 
-        let words = document.getElementsByClassName("word");
-        for (const word of words){
-            word.addEventListener("click", (e) => {
+        let words = document.getElementsByClassName('word');
+        for (const word of words) {
+            word.addEventListener('click', (e) => {
                 let element = e.target as HTMLElement;
                 this._onWordClick(element.innerText);
             });
         }
     }
-    
-    private _onWordClick(word:string){
+
+    private _onWordClick(word: string) {
         let annotation: Annotation | undefined = undefined;
         let doBreak: Boolean = false;
         let subtitles = this.subtitles;
-        for(const subtitle of subtitles) {
-            if (!subtitle.annotations ){
+        for (const subtitle of subtitles) {
+            if (!subtitle.annotations) {
                 return;
             }
             for (const subtitleAnnotation of subtitle.annotations) {
@@ -443,15 +446,19 @@ export default class SubtitleController {
         if (annotation === undefined) {
             return;
         }
-        
-        let nextAnnotation : AnnotationType;
-        if (annotation.ankiAnnotationType === AnnotationType.known || annotation.ankiAnnotationType === AnnotationType.unknown) {
-            nextAnnotation = annotation.annotationType === AnnotationType.known ? AnnotationType.unknown : AnnotationType.known; 
-        }else {
-            nextAnnotation = annotation.annotationType === AnnotationType.known ? AnnotationType.notInDeck : AnnotationType.known; 
+
+        let nextAnnotation: AnnotationType;
+        if (
+            annotation.ankiAnnotationType === AnnotationType.known ||
+            annotation.ankiAnnotationType === AnnotationType.unknown
+        ) {
+            nextAnnotation =
+                annotation.annotationType === AnnotationType.known ? AnnotationType.unknown : AnnotationType.known;
+        } else {
+            nextAnnotation =
+                annotation.annotationType === AnnotationType.known ? AnnotationType.notInDeck : AnnotationType.known;
         }
-        
-        
+
         chrome.runtime.sendMessage(
             {
                 sender: 'player',
@@ -459,7 +466,7 @@ export default class SubtitleController {
                     command: 'set-word-annotation-with-subtitles',
                     currentAnnotation: annotation,
                     nextAnnotation: nextAnnotation,
-                    subtitles: subtitles
+                    subtitles: subtitles,
                 },
             },
             (response) => {
@@ -467,8 +474,7 @@ export default class SubtitleController {
                     this.subtitles = response;
                 }
             }
-        )
-        
+        );
     }
 
     private _resetUnblurState() {
@@ -553,9 +559,9 @@ export default class SubtitleController {
             track
         )}">${text}</span>`;
     }
-    
+
     private _buildTextHtmlWithColor(subtitle: SubtitleModel, track?: number): string {
-        if(!subtitle.annotations || subtitle.annotations.length <= 0){
+        if (!subtitle.annotations || subtitle.annotations.length <= 0) {
             return this._buildTextHtml(subtitle.text);
         }
 
@@ -577,7 +583,9 @@ export default class SubtitleController {
             coloredText += `<span class="word ${className}">${annotation.word}</span>`;
         }
 
-        return `<span data-track="${track ?? 0}" class="${this._subtitleClasses(track)}" style="${this._subtitleStyles(track)}">${coloredText}</span>`;
+        return `<span data-track="${track ?? 0}" class="${this._subtitleClasses(track)}" style="${this._subtitleStyles(
+            track
+        )}">${coloredText}</span>`;
     }
 
     unbind() {

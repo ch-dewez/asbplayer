@@ -141,7 +141,6 @@ export default function Bar({
         setMenuAnchorEl(e.currentTarget as HTMLElement);
         setMenuOpen(true);
     }, []);
-    
 
     return (
         <>

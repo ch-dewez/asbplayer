@@ -325,7 +325,7 @@ export default class ChromeExtension {
         return this._createResponsePromise(messageId);
     }
 
-    getAnnotationsFromSubtitles(subtitles: SubtitleModel[]){
+    getAnnotationsFromSubtitles(subtitles: SubtitleModel[]) {
         const messageId = uuidv4();
         const command: Command<AddAnnotationsMessageFromApp> = {
             sender: 'player',
@@ -339,7 +339,11 @@ export default class ChromeExtension {
         return this._createResponsePromise(messageId) as Promise<SubtitleModel[]>;
     }
 
-    setWordStateAndSubtitles(currentAnnotation:Annotation, nextAnnotation:AnnotationType, subtitles:SubtitleModel[]){
+    setWordStateAndSubtitles(
+        currentAnnotation: Annotation,
+        nextAnnotation: AnnotationType,
+        subtitles: SubtitleModel[]
+    ) {
         const messageId = uuidv4();
         const command: Command<setWordAndSubtitlesMessageFromApp> = {
             sender: 'player',

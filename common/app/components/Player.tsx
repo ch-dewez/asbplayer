@@ -170,16 +170,13 @@ const Player = React.memo(function Player({
     const [subtitlesSentThroughChannel, setSubtitlesSentThroughChannel] = useState<boolean>();
     const subtitlesRef = useRef<DisplaySubtitleModel[]>();
     subtitlesRef.current = subtitles;
-    const subtitleCollection = useMemo<SubtitleCollection<DisplaySubtitleModel>>(
-        () => {
-            return new SubtitleCollection(subtitles ?? [], {
-                returnLastShown: true,
-                returnNextToShow: playMode === PlayMode.condensed || playMode === PlayMode.fastForward,
-                showingCheckRadiusMs: 100,
-            })
-        },
-        [subtitles, playMode]
-    );
+    const subtitleCollection = useMemo<SubtitleCollection<DisplaySubtitleModel>>(() => {
+        return new SubtitleCollection(subtitles ?? [], {
+            returnLastShown: true,
+            returnNextToShow: playMode === PlayMode.condensed || playMode === PlayMode.fastForward,
+            showingCheckRadiusMs: 100,
+        });
+    }, [subtitles, playMode]);
     const subtitleFiles = sources?.subtitleFiles;
     const flattenSubtitleFiles = sources?.flattenSubtitleFiles;
     const videoFile = sources?.videoFile;
@@ -380,16 +377,14 @@ const Player = React.memo(function Player({
                     setSubtitlesSentThroughChannel(false);
                     onSubtitles(subtitles);
 
-
-                    extension.getAnnotationsFromSubtitles(subtitles)
-                    .then((result)=> {
+                    extension.getAnnotationsFromSubtitles(subtitles).then((result) => {
                         let displaySubtitle = result as DisplaySubtitleModel[];
-                        if (displaySubtitle === undefined){
+                        if (displaySubtitle === undefined) {
                             console.log(subtitles);
                             return;
                         }
                         onSubtitles(displaySubtitle);
-                    })
+                    });
 
                     setPlayMode((playMode) => (!subtitles || subtitles.length === 0 ? PlayMode.normal : playMode));
                 } catch (e) {
