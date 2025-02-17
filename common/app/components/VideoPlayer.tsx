@@ -217,12 +217,10 @@ const SubtitleLineWithColor = React.memo(function SubtitleTextWithColor({
 
             start += line.length;
         }
-        
         if (!subtitle.annotations || subtitle.annotations.length <= 0) {
             setWords([<span key={subtitle.text}>{lines[lineIndex]}</span>]);
             return;
         }
-
 
         for (const annotation of subtitle.annotations) {
             if (annotation.endIndex <= start || annotation.startIndex > end) {
