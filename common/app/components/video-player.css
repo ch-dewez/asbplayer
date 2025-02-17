@@ -40,11 +40,11 @@
 }
 
 .knownWords:after {
-    background-color: green;
+    background-color: #00ff0000;
 }
 .unknownWords:after {
-    background-color: red;
+    background-color: rgb(255, 31, 98);
 }
 .notInDeckWords:after {
-    background-color: black;
+    background-color: rgb(59 76 238);
 }

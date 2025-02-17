@@ -213,7 +213,7 @@ const useSubtitleRowStyles = makeStyles((theme) => ({
             height: '.1em',
             width: 'calc(100% - 3px)',
             bottom: '-1px',
-            backgroundColor: 'rgb(44, 159, 44)',
+            backgroundColor: 'rgba(0, 255, 0, 0)',
         },
     },
     notInDeckWords: {
@@ -229,7 +229,7 @@ const useSubtitleRowStyles = makeStyles((theme) => ({
             height: '.1em',
             width: 'calc(100% - 3px)',
             bottom: '-1px',
-            backgroundColor: 'rgb(0, 0, 0)',
+            backgroundColor: 'rgb(59, 76, 238)',
         },
     },
     unknownWords: {
@@ -245,7 +245,7 @@ const useSubtitleRowStyles = makeStyles((theme) => ({
             height: '.1em',
             width: 'calc(100% - 3px)',
             bottom: '-1px',
-            backgroundColor: 'rgb(222, 6, 75)',
+            backgroundColor: 'rgb(255, 31, 98)',
         },
     },
 }));
