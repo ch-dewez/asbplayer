@@ -374,7 +374,6 @@ const Player = React.memo(function Player({
                         index: i,
                     }));
 
-                    setSubtitlesSentThroughChannel(false);
                     onSubtitles(subtitles);
 
                     extension.getAnnotationsFromSubtitles(subtitles).then((result) => {
@@ -384,6 +383,7 @@ const Player = React.memo(function Player({
                             return;
                         }
                         onSubtitles(displaySubtitle);
+                        setSubtitlesSentThroughChannel(false);
                     });
 
                     setPlayMode((playMode) => (!subtitles || subtitles.length === 0 ? PlayMode.normal : playMode));
@@ -432,6 +432,8 @@ const Player = React.memo(function Player({
         }
 
         return channel.onReady(() => {
+            console.log("sending subtitles");
+            console.log(subtitles);
             setSubtitlesSentThroughChannel(true);
             channel.subtitles(
                 subtitles,

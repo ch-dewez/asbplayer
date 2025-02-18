@@ -761,20 +761,6 @@ export default function VideoPlayer({
         return () => playerChannel.close();
     }, [clock, playerChannel, requestFullscreen, updateSubtitlesWithOffset, updatePlaybackRate]);
         
-    useEffect(() => {
-        if (subtitles && subtitles[0] && typeof subtitles[0].annotations === 'undefined') {
-            console.log("getting annotation effect")
-            extension.getAnnotationsFromSubtitles(subtitles).then((result) => {
-                let subtitlesWithAnnotations = result as IndexedSubtitleModel[];
-                if (subtitlesWithAnnotations === undefined) {
-                    console.log('display sub undefined');
-                    return;
-                }
-                setSubtitles(subtitlesWithAnnotations);
-            })
-            .catch((e) => console.log(e));
-        }
-    }, [extension, subtitles]);
 
     const handlePlay = useCallback(() => {
         if (videoRef.current) {
