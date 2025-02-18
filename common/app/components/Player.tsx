@@ -384,7 +384,8 @@ const Player = React.memo(function Player({
                         }
                         onSubtitles(displaySubtitle);
                         setSubtitlesSentThroughChannel(false);
-                    });
+                    })
+                    .catch((e) => console.log(e));
 
                     setPlayMode((playMode) => (!subtitles || subtitles.length === 0 ? PlayMode.normal : playMode));
                 } catch (e) {
