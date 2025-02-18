@@ -724,16 +724,6 @@ export default function VideoPlayer({
             setSubtitles(indexedSubtitles);
             setTrackCount(Math.max(...subtitles.map((s) => s.track)) + 1);
 
-            if (indexedSubtitles !== undefined) {
-                extension.getAnnotationsFromSubtitles(indexedSubtitles).then((result) => {
-                    if (!result) {
-                        return;
-                    }
-                    let displaySubtitle = result as IndexedSubtitleModel[];
-                    setSubtitles(displaySubtitle);
-                });
-            }
-
             if (subtitles && subtitles.length > 0) {
                 const s = subtitles[0];
                 const offset = s.start - s.originalStart;
@@ -770,6 +760,21 @@ export default function VideoPlayer({
         setPlayerChannelSubscribed(true);
         return () => playerChannel.close();
     }, [clock, playerChannel, requestFullscreen, updateSubtitlesWithOffset, updatePlaybackRate]);
+        
+    useEffect(() => {
+        if (subtitles && subtitles[0] && typeof subtitles[0].annotations === 'undefined') {
+            console.log("getting annotation effect")
+            extension.getAnnotationsFromSubtitles(subtitles).then((result) => {
+                let subtitlesWithAnnotations = result as IndexedSubtitleModel[];
+                if (subtitlesWithAnnotations === undefined) {
+                    console.log('display sub undefined');
+                    return;
+                }
+                setSubtitles(subtitlesWithAnnotations);
+            })
+            .catch((e) => console.log(e));
+        }
+    }, [extension, subtitles]);
 
     const handlePlay = useCallback(() => {
         if (videoRef.current) {

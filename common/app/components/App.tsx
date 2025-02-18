@@ -1067,6 +1067,9 @@ function App({
                                     return;
                                 }
                                 setSubtitles(subtitlesWithAnnotations);
+                            })
+                            .catch((e) => {
+                                console.error(e);
                             });
                         }
                     }
