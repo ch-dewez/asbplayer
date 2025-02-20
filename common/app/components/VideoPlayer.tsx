@@ -760,7 +760,6 @@ export default function VideoPlayer({
         setPlayerChannelSubscribed(true);
         return () => playerChannel.close();
     }, [clock, playerChannel, requestFullscreen, updateSubtitlesWithOffset, updatePlaybackRate]);
-        
 
     const handlePlay = useCallback(() => {
         if (videoRef.current) {

@@ -1060,17 +1060,19 @@ function App({
                         setSubtitles(newSubtitles);
                         setTab(videoElement);
                         if (!newSubtitles[0].annotations) {
-                            extension.getAnnotationsFromSubtitles(newSubtitles).then((result) => {
-                                let subtitlesWithAnnotations = result as DisplaySubtitleModel[];
-                                if (subtitlesWithAnnotations === undefined) {
-                                    console.log('display sub undefined');
-                                    return;
-                                }
-                                setSubtitles(subtitlesWithAnnotations);
-                            })
-                            .catch((e) => {
-                                console.error(e);
-                            });
+                            extension
+                                .getAnnotationsFromSubtitles(newSubtitles)
+                                .then((result) => {
+                                    let subtitlesWithAnnotations = result as DisplaySubtitleModel[];
+                                    if (subtitlesWithAnnotations === undefined) {
+                                        console.log('display sub undefined');
+                                        return;
+                                    }
+                                    setSubtitles(subtitlesWithAnnotations);
+                                })
+                                .catch((e) => {
+                                    console.error(e);
+                                });
                         }
                     }
                 }
