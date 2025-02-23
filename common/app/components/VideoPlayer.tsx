@@ -1671,7 +1671,9 @@ export default function VideoPlayer({
             />
         );
     const subtitleElementsWithAlignment = (alignment: SubtitleAlignment) =>
-        showSubtitles.filter((s) => subtitleAlignmentForTrack(s.track) === alignment).map(elementForSubtitle);
+        Array.isArray(showSubtitles)
+            ? showSubtitles.filter((s) => subtitleAlignmentForTrack(s.track) === alignment).map(elementForSubtitle)
+            : [];
     const topSubtitleElements = useMemo(
         () => (displaySubtitles ? subtitleElementsWithAlignment('top') : []),
         [showSubtitles]
