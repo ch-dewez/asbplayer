@@ -155,6 +155,11 @@ export interface AddAnnotationsMessage extends Message {
     readonly subtitles: SubtitleModel[];
 }
 
+export interface AddAnnotationsToStringArrayMessage extends Message {
+    readonly command: 'add-annotations-to-string-array';
+    readonly texts: string[];
+}
+
 export interface AddAnnotationsMessageFromApp extends MessageWithId {
     readonly command: 'add-annotations';
     readonly subtitles: SubtitleModel[];
@@ -169,6 +174,13 @@ export interface AddAnnotationsMessageFromApp extends MessageWithId {
 //     readonly command: 'set-word-annotation';
 //     readonly word: string;
 // }
+
+export interface setWordAndAnnotationsArrayArrayMessage extends Message {
+    readonly command: 'set-word-annotation-with-annotations-array-array';
+    readonly currentAnnotation: Annotation;
+    readonly nextAnnotation: AnnotationType;
+    readonly annotationsArrayArray: Annotation[][];
+}
 
 export interface setWordAndSubtitlesMessage extends Message {
     readonly command: 'set-word-annotation-with-subtitles';

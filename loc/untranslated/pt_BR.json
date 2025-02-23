@@ -3,6 +3,7 @@
         "action.hideOverlay": "Hide Overlay",
         "action.decreaseOffsetButton": "Decrease offset to so that next subtitle is at current position. Hold to decrease by 100ms.",
         "action.increaseOffsetButton": "Increase offset to so that previous subtitle is at current position. Hold to increase by 100ms.",
+        "action.parsePage": "Parse the Page",
         "postMineAction.exportCard": "Export card",
         "ankiDialog.url": "URL",
         "binds.decreasePlaybackRate": "Decrease playback rate",

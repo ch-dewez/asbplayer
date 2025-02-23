@@ -1,5 +1,7 @@
 {
-    "common": {},
+    "common": {
+        "action.parsePage": "Parse the Page"
+    },
     "extension": {},
     "external": {}
 }

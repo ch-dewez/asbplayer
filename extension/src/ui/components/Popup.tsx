@@ -69,12 +69,35 @@ const Popup = ({
     const { localFontsAvailable, localFontsPermission, localFontFamilies } = useLocalFontFamilies();
     const theme = useTheme();
 
+    const onParsePage = () => {
+        var query = { active: true, currentWindow: true };
+        chrome.tabs.query(query, (tab) => {
+            if (tab[0].id === undefined) {
+                return;
+            }
+            chrome.tabs.sendMessage(tab[0].id, {
+                sender: 'popup',
+                message: {
+                    command: 'parse-page',
+                },
+            });
+        });
+    };
+
     if (!i18nInitialized) {
         return null;
     }
 
     return (
         <Grid container direction="column" spacing={0}>
+            <Grid
+                item
+                style={{ marginLeft: theme.spacing(2), marginTop: theme.spacing(2), marginRight: theme.spacing(2) }}
+            >
+                <Button variant="contained" color="secondary" onClick={onParsePage} style={{ width: '100%' }}>
+                    {t('action.parsePage')}
+                </Button>
+            </Grid>
             <Grid
                 item
                 style={{ marginLeft: theme.spacing(2), marginTop: theme.spacing(2), marginRight: theme.spacing(2) }}

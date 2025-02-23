@@ -92,6 +92,7 @@ module.exports = (env, options) => ({
         'mobile-video-overlay-ui': './src/mobile-video-overlay-ui.ts',
         'notification-ui': './src/notification-ui.ts',
         asbplayer: './src/asbplayer.ts',
+        'page-parser-and-highlighter': './src/page-parser-and-highlighter.ts',
         'offscreen-audio-recorder': './src/offscreen-audio-recorder.ts',
         'mp3-encoder-worker': '../common/audio-clip/mp3-encoder-worker.ts',
         'pgs-parser-worker': '../common/subtitle-reader/pgs-parser-worker.ts',

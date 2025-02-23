@@ -45,6 +45,13 @@
             "js": ["asbplayer.js"],
             "all_frames": true,
             "run_at": "document_start"
+        },
+        {
+            "matches": ["<all_urls>"],
+            "exclude_globs": ["*://ch-dewez.github.io/asbplayer*", "*://localhost:3000/*"],
+            "js": ["page-parser-and-highlighter.js"],
+            "css": ["web-colored-words.css"],
+            "all_frames": true
         }
     ],
     "commands": {

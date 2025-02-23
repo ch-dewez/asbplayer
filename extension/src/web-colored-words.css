@@ -1,0 +1,21 @@
+.knownWords:after,
+.notInDeckWords:after,
+.unknownWords:after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -3px;
+    width: calc(100% - 3px);
+    height: 0.1em;
+}
+
+.knownWords:after {
+    background-color: #00ff0000;
+}
+.unknownWords:after {
+    background-color: rgb(255, 31, 98);
+}
+.notInDeckWords:after {
+    background-color: rgb(59, 76, 238);
+}

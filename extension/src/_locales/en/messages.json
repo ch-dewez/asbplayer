@@ -25,5 +25,8 @@
     },
     "contextMenuLoadSubtitles": {
         "message": "Load Subtitles"
+    },
+    "contextMenuParsePage": {
+        "message": "Parse Page"
     }
 }

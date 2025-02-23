@@ -5,7 +5,7 @@ import { AnkiSettings, AnkiSettingsFieldKey } from '@project/common/settings';
 import sanitize from 'sanitize-filename';
 import { extractText, sourceString } from '@project/common/util';
 import { getBasicFormAndSurfaceFormFromText, getBasicFormFromText } from '@project/common/japanese-tokenizer/tokenizer';
-import { useAppKeyBinder } from '../app/hooks/use-app-key-binder';
+import { wordsStorage } from '@project/common/anki/words-storage';
 
 declare global {
     interface String {
@@ -156,7 +156,94 @@ export async function exportCard(card: CardModel, ankiSettings: AnkiSettings, ex
     });
 }
 
-let storage = typeof chrome !== 'undefined' && chrome.storage ? chrome.storage.local : undefined;
+let storage = new wordsStorage();
+
+export async function addAnnotationsToStringArray(texts: string[], ankiSettings: AnkiSettings) {
+    let combinedText = '';
+    for (const text of texts) {
+        combinedText += ' ' + text;
+    }
+
+    let knownWords = await findKnownWordsInText(combinedText, ankiSettings);
+
+    let results: { text: string; annotations: Annotation[] }[] = [];
+    for (const text of texts) {
+        let result: { text: string; annotations: Annotation[] } = { text, annotations: [] };
+        let forms = await getBasicFormAndSurfaceFormFromText(text);
+
+        // made by o3
+        function escapeRegExp(str: string): string {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        let nbCharacterAlreadyComputed = 0;
+        for (const currentForms of forms) {
+            // need to find start and end for that words
+            const escapedSurfaceForm = escapeRegExp(currentForms.surface_form);
+            let start =
+                text.slice(nbCharacterAlreadyComputed).search(new RegExp(escapedSurfaceForm)) +
+                nbCharacterAlreadyComputed;
+            let end = start + currentForms.surface_form.length;
+
+            let word = knownWords.find((e) => e.word === currentForms.basic_form);
+            let annotationType = word?.annotationType;
+            let ankiAnnotationType = word?.ankiAnnotationType;
+
+            if (annotationType === undefined || ankiAnnotationType === undefined) {
+                annotationType = AnnotationType.unknown;
+                ankiAnnotationType = AnnotationType.notInDeck;
+            }
+
+            let annotation: Annotation = {
+                startIndex: start,
+                endIndex: end,
+                annotationType: annotationType,
+                word: currentForms.surface_form,
+                basic_form: currentForms.basic_form,
+                ankiAnnotationType,
+            };
+
+            nbCharacterAlreadyComputed += currentForms.surface_form.length ?? 0;
+            result.annotations.push(annotation);
+        }
+
+        results.push(result);
+    }
+
+    return results;
+}
+
+export async function setWordsAnnotationWithAnnotationsArrayArray(
+    currentAnnotation: Annotation,
+    nextAnnotation: AnnotationType,
+    textsAnnotations: Annotation[][]
+) {
+    if (nextAnnotation === currentAnnotation.ankiAnnotationType) {
+        storage.removeUserModifiedWordAnnotation(currentAnnotation.basic_form);
+    } else {
+        storage.setUserModifiedWordAnnotation(
+            currentAnnotation.basic_form,
+            nextAnnotation,
+            currentAnnotation.ankiAnnotationType
+        );
+    }
+
+    let result = textsAnnotations.map((textAnnotations) => {
+        if (!textAnnotations || textAnnotations.length <= 0) {
+            return textAnnotations;
+        }
+        return textAnnotations.map((annotation) => {
+            if (annotation.basic_form === currentAnnotation.basic_form) {
+                annotation.annotationType = nextAnnotation;
+                return annotation;
+            }
+
+            return annotation;
+        });
+    });
+
+    return result;
+}
 
 export async function setWordsAnnotationWithSubtitles(
     currentAnnotation: Annotation,
@@ -164,9 +251,9 @@ export async function setWordsAnnotationWithSubtitles(
     subtitles: SubtitleModel[]
 ) {
     if (nextAnnotation === currentAnnotation.ankiAnnotationType) {
-        removeUserModifiedWordAnnotation(currentAnnotation.basic_form);
+        storage.removeUserModifiedWordAnnotation(currentAnnotation.basic_form);
     } else {
-        setUserModifiedWordAnnotation(
+        storage.setUserModifiedWordAnnotation(
             currentAnnotation.basic_form,
             nextAnnotation,
             currentAnnotation.ankiAnnotationType
@@ -188,164 +275,6 @@ export async function setWordsAnnotationWithSubtitles(
     });
 
     return subtitles;
-}
-
-function replacer(key: any, value: any) {
-    if (value instanceof Map) {
-        return {
-            dataType: 'Map',
-            value: Array.from(value.entries()), // or with spread: value: [...value]
-        };
-    } else {
-        return value;
-    }
-}
-
-function reviver(key: any, value: any) {
-    if (typeof value === 'object' && value !== null) {
-        if (value.dataType === 'Map') {
-            return new Map(value.value);
-        }
-    }
-    return value;
-}
-
-async function getUserModifiedWordAnnotation() {
-    if (!storage) {
-        console.log('no storage get');
-        return undefined;
-    }
-    const val = await storage.get(['userModifiedWordAnnotation']).then((result) => {
-        return result.userModifiedWordAnnotation;
-    });
-
-    if (val == null) {
-        console.log('no value == null');
-        return undefined;
-    }
-
-    return JSON.parse(val, reviver) as Map<string, { annotation: AnnotationType; ankiAnnotation: AnnotationType }>;
-}
-
-async function setUserModifiedWordAnnotation(word: string, annotation: AnnotationType, ankiAnnotation: AnnotationType) {
-    if (!storage) {
-        console.log('no storage set');
-        return;
-    }
-
-    let currentUserModifiedWords =
-        (await getUserModifiedWordAnnotation()) ??
-        new Map<string, { annotation: AnnotationType; ankiAnnotation: AnnotationType }>();
-
-    currentUserModifiedWords.set(word, { annotation, ankiAnnotation });
-    storage.set({ userModifiedWordAnnotation: JSON.stringify(currentUserModifiedWords, replacer) });
-}
-
-async function removeUserModifiedWordAnnotation(word: string) {
-    if (!storage) {
-        return;
-    }
-
-    let currentUserModifiedWords = (await getUserModifiedWordAnnotation()) ?? new Map();
-
-    currentUserModifiedWords.delete(word);
-
-    storage.set({ userModifiedWordAnnotation: JSON.stringify(currentUserModifiedWords, replacer) });
-}
-
-async function getSavedKnownWord() {
-    if (!storage) {
-        return undefined;
-    }
-    const val = await storage.get(['knownWords']).then((result) => {
-        return result.knownWords;
-    });
-
-    if (val == null) {
-        return undefined;
-    }
-
-    return JSON.parse(val) as string[];
-}
-
-async function getSavedUnknownWords() {
-    if (!storage) {
-        return undefined;
-    }
-    const val = await storage.get(['unknownWords']).then((result) => {
-        return result.unknownWords;
-    });
-
-    if (val == null) {
-        return undefined;
-    }
-
-    return JSON.parse(val) as { word: string; id: number }[];
-}
-
-async function SaveNewKnownWord(knownWords: string[]) {
-    if (!storage) {
-        return;
-    }
-    let alreadyKnownWords: string[] = (await getSavedKnownWord()) ?? [];
-
-    alreadyKnownWords.push(...knownWords);
-
-    await storage.set({ knownWords: JSON.stringify(alreadyKnownWords) });
-}
-
-async function SaveNewUnknownWord(unknownWords: { word: string; id: number }[]) {
-    if (!storage) {
-        return;
-    }
-    let alreadyUnknownWords: { word: string; id: number }[] = (await getSavedUnknownWords()) ?? [];
-
-    alreadyUnknownWords.push(...unknownWords);
-
-    await storage.set({ unknownWords: JSON.stringify(alreadyUnknownWords) });
-}
-
-async function RemoveOldUnknownWords(unknownWordsToRemove: { word: string; id: number }[]) {
-    if (!storage || unknownWordsToRemove.length <= 0) {
-        return;
-    }
-
-    let alreadyUnknownWords = await getSavedUnknownWords();
-    if (alreadyUnknownWords === undefined) {
-        console.error('want to remove unknownWords but get get already unknown words');
-        return;
-    }
-
-    alreadyUnknownWords = alreadyUnknownWords.filter((e) => {
-        !unknownWordsToRemove.includes(e);
-    });
-    await storage.set({ unknownWords: JSON.stringify(alreadyUnknownWords) });
-}
-
-async function GetSavedNotInDeckWords() {
-    if (!storage) {
-        return undefined;
-    }
-    const val = await storage.get(['notInDeckWords']).then((result) => {
-        return result.notInDeckWords;
-    });
-
-    if (val == null) {
-        return undefined;
-    }
-
-    return JSON.parse(val) as string[];
-}
-
-async function SaveNewNotInDeckWord(notInDeckWords: string[]) {
-    if (!storage) {
-        return;
-    }
-    let alreadyNotInDeckWords: string[] = (await GetSavedNotInDeckWords()) ?? [];
-
-    alreadyNotInDeckWords.push(...notInDeckWords);
-
-    await storage.set({ notInDeckWords: JSON.stringify(alreadyNotInDeckWords) });
 }
 
 export async function addAnnotationsToSubtitlesArray(subtitles: SubtitleModel[], ankiSettings: AnkiSettings) {
@@ -373,7 +302,6 @@ export async function addAnnotationsToSubtitlesArray(subtitles: SubtitleModel[],
     console.log(`it took ${endTime - startTime}`);
     return resultSubtitles;
 }
-
 // knownWords var name should be changed
 export async function addAnnotationsToSubtitle(
     subtitle: SubtitleModel,
@@ -438,7 +366,7 @@ export async function findKnownWordsInText(
 
     // check in the userModified word list
     const userModifiedWordAnnotation =
-        (await getUserModifiedWordAnnotation()) ??
+        (await storage.getUserModifiedWordAnnotation()) ??
         new Map<string, { annotation: AnnotationType; ankiAnnotation: AnnotationType }>();
     let wordToRemove: string[] = [];
     for (const word of basic_form) {
@@ -453,7 +381,7 @@ export async function findKnownWordsInText(
     basic_form = basic_form.filter((e) => !wordToRemove.includes(e));
 
     // we'll chech in the already saved words lists
-    const alreadyKnownWords: string[] = (await getSavedKnownWord()) ?? [];
+    const alreadyKnownWords: string[] = (await storage.getSavedKnownWord()) ?? [];
 
     for (const word of basic_form) {
         if (alreadyKnownWords.includes(word)) {
@@ -461,7 +389,7 @@ export async function findKnownWordsInText(
         }
     }
 
-    const alreadyUnknownWords = (await getSavedUnknownWords()) ?? [];
+    const alreadyUnknownWords = (await storage.getSavedUnknownWords()) ?? [];
     let unknownWordsInText: { word: string; id: number }[] = [];
     for (const unknownWord of alreadyUnknownWords) {
         if (basic_form.includes(unknownWord.word)) {
@@ -469,7 +397,7 @@ export async function findKnownWordsInText(
         }
     }
 
-    const alreadyNotInDeckWords: string[] = (await GetSavedNotInDeckWords()) ?? [];
+    const alreadyNotInDeckWords: string[] = (await storage.GetSavedNotInDeckWords()) ?? [];
 
     for (const word of basic_form) {
         if (alreadyNotInDeckWords.includes(word)) {
@@ -520,7 +448,7 @@ export async function findKnownWordsInText(
         }
     });
 
-    SaveNewNotInDeckWord(notInDeckWordsToSave);
+    storage.SaveNewNotInDeckWord(notInDeckWordsToSave);
 
     //once we have the word we need to check if the interval is > that 1 days
     //return negative when seconds and positive if days so if we do > than 1 that will work
@@ -551,7 +479,7 @@ export async function findKnownWordsInText(
         }
     }
 
-    RemoveOldUnknownWords(unknownWordsToRemove);
+    storage.RemoveOldUnknownWords(unknownWordsToRemove);
 
     let knownWordsToSave: string[] = [];
     let unKnownWordsToSave: { word: string; id: number }[] = [];
@@ -575,8 +503,8 @@ export async function findKnownWordsInText(
     }
 
     // not saving unknown words because they can become known but I mean in the future I could (feature noted in notion)
-    SaveNewKnownWord(knownWordsToSave);
-    SaveNewUnknownWord(unKnownWordsToSave);
+    storage.SaveNewKnownWord(knownWordsToSave);
+    storage.SaveNewUnknownWord(unKnownWordsToSave);
 
     return words;
 }

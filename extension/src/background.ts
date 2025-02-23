@@ -62,6 +62,8 @@ import ClearCopyHistoryHandler from './handlers/asbplayerv2/clear-copy-history-h
 import SaveCopyHistoryHandler from './handlers/asbplayerv2/save-copy-history-handler';
 import AddAnnotationsHandler from './handlers/asbplayerv2/add-annotations-handler';
 import SetWordAnnotationWithSubtitlesHandler from './handlers/asbplayerv2/set-word-annotation-handler';
+import AddAnnotationsToStringArrayHandler from './handlers/webParser/add-annotations-to-string-array-handler';
+import SetWordAnnotationWithAnnotationsArrayArrayHandler from './handlers/webParser/set-word-annotation-with-annotations-array-array-handler';
 
 if (!isFirefoxBuild) {
     chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
@@ -161,6 +163,8 @@ const handlers: CommandHandler[] = [
     new MobileOverlayForwarderHandler(),
     new AddAnnotationsHandler(settings),
     new SetWordAnnotationWithSubtitlesHandler(),
+    new AddAnnotationsToStringArrayHandler(settings),
+    new SetWordAnnotationWithAnnotationsArrayArrayHandler(),
 ];
 
 chrome.runtime.onMessage.addListener((request: Command<Message>, sender, sendResponse) => {
@@ -170,7 +174,8 @@ chrome.runtime.onMessage.addListener((request: Command<Message>, sender, sendRes
             (typeof handler.sender === 'object' && handler.sender.includes(request.sender))
         ) {
             if (handler.command === null || handler.command === request.message.command) {
-                if (handler.handle(request, sender, sendResponse) === true) {
+                let handlerResult = handler.handle(request, sender, sendResponse);
+                if (handlerResult) {
                     return true;
                 }
 
@@ -192,43 +197,66 @@ chrome.runtime.onInstalled.addListener(() => {
         title: chrome.i18n.getMessage('contextMenuMineSubtitle'),
         contexts: ['page', 'video'],
     });
+
+    chrome.contextMenus?.create({
+        id: 'parse-page',
+        title: chrome.i18n.getMessage('contextMenuParsePage'),
+        contexts: ['page'],
+    });
 });
 
 chrome.contextMenus?.onClicked.addListener((info) => {
-    if (info.menuItemId === 'load-subtitles') {
-        const toggleVideoSelectCommand: ExtensionToVideoCommand<ToggleVideoSelectMessage> = {
-            sender: 'asbplayer-extension-to-video',
-            message: {
-                command: 'toggle-video-select',
-            },
-        };
-        tabRegistry.publishCommandToVideoElementTabs((tab): ExtensionToVideoCommand<Message> | undefined => {
-            if (info.pageUrl !== tab.url) {
-                return undefined;
-            }
-
-            return toggleVideoSelectCommand;
-        });
-    } else if (info.menuItemId === 'mine-subtitle') {
-        tabRegistry.publishCommandToVideoElements((videoElement): ExtensionToVideoCommand<Message> | undefined => {
-            if (info.srcUrl !== undefined && videoElement.src !== info.srcUrl) {
-                return undefined;
-            }
-
-            if (info.srcUrl === undefined && info.pageUrl !== videoElement.tab.url) {
-                return undefined;
-            }
-
-            const copySubtitleCommand: ExtensionToVideoCommand<CopySubtitleMessage> = {
+    switch (info.menuItemId) {
+        case 'load-subtitles':
+            const toggleVideoSelectCommand: ExtensionToVideoCommand<ToggleVideoSelectMessage> = {
                 sender: 'asbplayer-extension-to-video',
                 message: {
-                    command: 'copy-subtitle',
-                    postMineAction: PostMineAction.showAnkiDialog,
+                    command: 'toggle-video-select',
                 },
-                src: videoElement.src,
             };
-            return copySubtitleCommand;
-        });
+            tabRegistry.publishCommandToVideoElementTabs((tab): ExtensionToVideoCommand<Message> | undefined => {
+                if (info.pageUrl !== tab.url) {
+                    return undefined;
+                }
+
+                return toggleVideoSelectCommand;
+            });
+            break;
+        case 'mine-subtitle':
+            tabRegistry.publishCommandToVideoElements((videoElement): ExtensionToVideoCommand<Message> | undefined => {
+                if (info.srcUrl !== undefined && videoElement.src !== info.srcUrl) {
+                    return undefined;
+                }
+
+                if (info.srcUrl === undefined && info.pageUrl !== videoElement.tab.url) {
+                    return undefined;
+                }
+
+                const copySubtitleCommand: ExtensionToVideoCommand<CopySubtitleMessage> = {
+                    sender: 'asbplayer-extension-to-video',
+                    message: {
+                        command: 'copy-subtitle',
+                        postMineAction: PostMineAction.showAnkiDialog,
+                    },
+                    src: videoElement.src,
+                };
+                return copySubtitleCommand;
+            });
+            break;
+        case 'parse-page':
+            var query = { active: true, currentWindow: true };
+            chrome.tabs.query(query, (tab) => {
+                if (tab[0].id === undefined) {
+                    return;
+                }
+                chrome.tabs.sendMessage(tab[0].id, {
+                    sender: 'background',
+                    message: {
+                        command: 'parse-page',
+                    },
+                });
+            });
+            break;
     }
 });
 
