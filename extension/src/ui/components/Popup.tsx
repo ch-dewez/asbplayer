@@ -133,6 +133,7 @@ const Popup = ({
                 style={{ height: isMobile ? 'auto' : 400, marginTop: theme.spacing(1), marginRight: theme.spacing(1) }}
             >
                 <SettingsForm
+                    extension={undefined}
                     extensionInstalled
                     extensionVersion={chrome.runtime.getManifest().version}
                     extensionSupportsAppIntegration

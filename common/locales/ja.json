@@ -277,6 +277,7 @@
         "addCustomField": "カスタムフィールドを追加",
         "alwaysPlayOnSubtitleRepeat": "「今の、または前の字幕冒頭に移動」の実行後、再生する",
         "anki": "Anki",
+        "tokenizer": "Tokenizer",
         "ankiConnectUrl": "AnkiConnect の URL",
         "audioField": "音声フィールド",
         "audioPaddingEnd": "音声の余白終了",

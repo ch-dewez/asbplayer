@@ -4,7 +4,7 @@ import { HttpFetcher, Fetcher } from '@project/common';
 import { AnkiSettings, AnkiSettingsFieldKey } from '@project/common/settings';
 import sanitize from 'sanitize-filename';
 import { extractText, sourceString } from '@project/common/util';
-import { getBasicFormAndSurfaceFormFromText, getBasicFormFromText } from '@project/common/japanese-tokenizer/tokenizer';
+import { Tokenizer, TokenizeWord } from '@project/common/japanese-tokenizer/tokenizer';
 import { wordsStorage } from '@project/common/anki/words-storage';
 
 declare global {
@@ -169,7 +169,10 @@ export async function addAnnotationsToStringArray(texts: string[], ankiSettings:
     let results: { text: string; annotations: Annotation[] }[] = [];
     for (const text of texts) {
         let result: { text: string; annotations: Annotation[] } = { text, annotations: [] };
-        let forms = await getBasicFormAndSurfaceFormFromText(text);
+        let forms = Tokenizer.tokenizeText(text);
+        if (forms.length === 0 && text.trim() !== ""){
+            return texts
+        }
 
         // made by o3
         function escapeRegExp(str: string): string {
@@ -313,7 +316,10 @@ export async function addAnnotationsToSubtitle(
 
     // add the annotations
     // so we need to separate words
-    let forms = await getBasicFormAndSurfaceFormFromText(subtitle.text);
+    let forms = Tokenizer.tokenizeText(subtitle.text);
+    if (forms.length === 0 && subtitle.text.trim() !== '') {
+        return subtitle;
+    }
 
     // made by o3
     function escapeRegExp(str: string): string {
@@ -349,9 +355,8 @@ export async function addAnnotationsToSubtitle(
     return newSubtitle;
 }
 
-// function name need to be changed
-export async function findKnownWordsInText(
-    text: string,
+async function findKnownWordsInSegmentedText(
+    segmentedText: TokenizeWord[],
     ankiSettings: AnkiSettings | Promise<AnkiSettings>
 ): Promise<{ word: string; annotationType: AnnotationType; ankiAnnotationType: AnnotationType }[]> {
     if (ankiSettings instanceof Promise) {
@@ -361,48 +366,47 @@ export async function findKnownWordsInText(
     let words: { word: string; annotationType: AnnotationType; ankiAnnotationType: AnnotationType }[] = [];
 
     // first step is to separate the text in words -> japanese tokenizer
-    let basic_form = await getBasicFormFromText(text);
-    basic_form = Array.from(new Set(basic_form));
+    segmentedText = Array.from(new Set(segmentedText));
 
     // check in the userModified word list
     const userModifiedWordAnnotation =
         (await storage.getUserModifiedWordAnnotation()) ??
         new Map<string, { annotation: AnnotationType; ankiAnnotation: AnnotationType }>();
     let wordToRemove: string[] = [];
-    for (const word of basic_form) {
-        let val = userModifiedWordAnnotation.get(word);
+    for (const word of segmentedText) {
+        let val = userModifiedWordAnnotation.get(word.basic_form);
         if (val === undefined) {
             continue;
         }
-        words.push({ word: word, annotationType: val.annotation, ankiAnnotationType: val.ankiAnnotation });
-        wordToRemove.push(word);
+        words.push({ word: word.basic_form, annotationType: val.annotation, ankiAnnotationType: val.ankiAnnotation });
+        wordToRemove.push(word.basic_form);
     }
 
-    basic_form = basic_form.filter((e) => !wordToRemove.includes(e));
+    segmentedText = segmentedText.filter((e) => !wordToRemove.includes(e.basic_form));
 
     // we'll chech in the already saved words lists
     const alreadyKnownWords: string[] = (await storage.getSavedKnownWord()) ?? [];
 
-    for (const word of basic_form) {
-        if (alreadyKnownWords.includes(word)) {
-            words.push({ word: word, annotationType: AnnotationType.known, ankiAnnotationType: AnnotationType.known });
+    for (const word of segmentedText) {
+        if (alreadyKnownWords.includes(word.basic_form)) {
+            words.push({ word: word.basic_form, annotationType: AnnotationType.known, ankiAnnotationType: AnnotationType.known });
         }
     }
 
     const alreadyUnknownWords = (await storage.getSavedUnknownWords()) ?? [];
     let unknownWordsInText: { word: string; id: number }[] = [];
     for (const unknownWord of alreadyUnknownWords) {
-        if (basic_form.includes(unknownWord.word)) {
+        if (segmentedText.findIndex((e) => e.basic_form === unknownWord.word) !== -1) {
             unknownWordsInText.push(unknownWord);
         }
     }
 
     const alreadyNotInDeckWords: string[] = (await storage.GetSavedNotInDeckWords()) ?? [];
 
-    for (const word of basic_form) {
-        if (alreadyNotInDeckWords.includes(word)) {
+    for (const word of segmentedText) {
+        if (alreadyNotInDeckWords.includes(word.basic_form)) {
             words.push({
-                word: word,
+                word: word.basic_form,
                 annotationType: AnnotationType.notInDeck,
                 ankiAnnotationType: AnnotationType.notInDeck,
             });
@@ -410,15 +414,15 @@ export async function findKnownWordsInText(
     }
 
     //remove them from basic_form so we don't to make useless request
-    basic_form = basic_form.filter((e) => !words.map((e) => e.word).includes(e));
-    basic_form = basic_form.filter((e) => !unknownWordsInText.map((e) => e.word).includes(e));
+    segmentedText = segmentedText.filter((e) => !words.map((e) => e.word).includes(e.basic_form));
+    segmentedText = segmentedText.filter((e) => !unknownWordsInText.map((e) => e.word).includes(e.basic_form));
 
     //once we have the basic form we need to find the word in Anki
     const anki = new Anki(ankiSettings);
 
     let actions: any = [];
-    for (const word of basic_form) {
-        actions.push(anki.createFindNotesActionsWithBoth(word));
+    for (const word of segmentedText) {
+        actions.push(anki.createFindNotesActionsWithBoth(word.basic_form));
     }
 
     let cards: { word: string; id: number }[] = [];
@@ -430,13 +434,13 @@ export async function findKnownWordsInText(
                 console.log(result.error);
             }
 
-            let word = basic_form[i];
+            let word = segmentedText[i];
 
             if (result.result.length <= 0) {
                 //not in deck
-                notInDeckWordsToSave.push(word);
+                notInDeckWordsToSave.push(word.basic_form);
                 words.push({
-                    word: word,
+                    word: word.basic_form,
                     annotationType: AnnotationType.notInDeck,
                     ankiAnnotationType: AnnotationType.notInDeck,
                 });
@@ -444,7 +448,7 @@ export async function findKnownWordsInText(
             }
             let id = result.result[0]; // ik it's a bit weird -- 0 bcs we want the first that has been found
 
-            cards.push({ word: word, id: id });
+            cards.push({ word: word.basic_form, id: id });
         }
     });
 
@@ -507,6 +511,18 @@ export async function findKnownWordsInText(
     storage.SaveNewUnknownWord(unKnownWordsToSave);
 
     return words;
+}
+
+// function name need to be changed
+export async function findKnownWordsInText(
+    text: string,
+    ankiSettings: AnkiSettings | Promise<AnkiSettings>
+): Promise<{ word: string; annotationType: AnnotationType; ankiAnnotationType: AnnotationType }[]> {
+    let segmentedText = Tokenizer.tokenizeText(text);
+    if (segmentedText.length === 0 && text.trim() !== '') {
+        throw new Error("Can't tokenize text");
+    }
+    return findKnownWordsInSegmentedText(segmentedText, ankiSettings);
 }
 
 export class Anki {

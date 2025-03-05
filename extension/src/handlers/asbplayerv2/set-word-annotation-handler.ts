@@ -15,6 +15,11 @@ export default class SetWordAnnotationWithSubtitlesHandler implements CommandHan
 
         setWordsAnnotationWithSubtitles(currentAnnotation, nextAnnotation, subtitles).then((result) => {
             sendResponse(result);
+        })
+        .catch((e) => {
+            sendResponse({
+                error: e
+            })
         });
 
         return true;

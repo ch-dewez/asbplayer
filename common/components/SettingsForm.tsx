@@ -70,6 +70,7 @@ import { isFirefox } from '@project/common/browser-detection';
 import SubtitleAppearanceTrackSelector from './SubtitleAppearanceTrackSelector';
 import SubtitlePreview from './SubtitlePreview';
 import About from './About';
+import ChromeExtension from '../app/services/chrome-extension';
 
 interface StylesProps {
     smallScreen: boolean;
@@ -624,6 +625,7 @@ function TabPanel({ children, value, index, ...other }: TabPanelProps) {
 
 type TabName =
     | 'anki-settings'
+    | 'tokenizer'
     | 'mining-settings'
     | 'subtitle-appearance'
     | 'keyboard-shortcuts'
@@ -632,6 +634,7 @@ type TabName =
 
 interface Props {
     anki: Anki;
+    extension: ChromeExtension | undefined;
     extensionInstalled: boolean;
     extensionVersion?: string;
     extensionSupportsAppIntegration: boolean;
@@ -662,6 +665,7 @@ const cssStyles = Object.keys(document.body.style).filter((s) => !isNumeric(s));
 export default function SettingsForm({
     anki,
     settings,
+    extension,
     extensionInstalled,
     extensionVersion,
     extensionSupportsAppIntegration,
@@ -1019,6 +1023,7 @@ export default function SettingsForm({
     const tabIndicesById = useMemo(() => {
         const tabs = [
             'anki-settings',
+            'tokenizer',
             'mining-settings',
             'subtitle-appearance',
             'keyboard-shortcuts',
@@ -1157,6 +1162,49 @@ export default function SettingsForm({
         selectedSubtitleAppearanceTrack !== undefined &&
         textSubtitleSettingsAreDirty(settings, selectedSubtitleAppearanceTrack);
 
+    const inputDictionnaryRef = useRef<HTMLInputElement>(null);
+    const loadDictionnary = useCallback(async () => {
+        if (!extension) {
+            console.log("doesn't have extension");
+            return;
+        }
+
+        const files = inputDictionnaryRef.current?.files;
+        if (files === undefined || files === null) {
+            console.log("files === undefined or null");
+            return;
+        }
+        if (files.length > 1) {
+            console.log("too much files");
+            return;
+        }
+        if (files.length <= 0){
+            console.log("not enough files selected");
+            return;
+        }
+        const file = files[0];
+        
+        extension.loadDictionnaryToTokenizer(await file.text());
+    }, [extension, inputDictionnaryRef])  
+
+    const [textToTokenize, setTextToTokenize] = useState<string>('');
+    const [tokenizedText, setTokenizedText] = useState<string>('');
+
+    const handleTextToTokenizeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setTextToTokenize(event.target.value);
+    };
+
+    const tokenize = useCallback(async () => {
+        if (!extension) {
+            console.log("doesn't have extension");
+            return;
+        }
+
+        console.log(textToTokenize)
+        let tokenizedWords = await extension.tokenizeText(textToTokenize);
+        setTokenizedText(tokenizedWords.map((e) => e.surface_form).join(' '));
+    }, [extension, textToTokenize]);
+
     return (
         <div className={classes.root}>
             <Tabs
@@ -1172,14 +1220,15 @@ export default function SettingsForm({
                 }}
             >
                 <Tab tabIndex={0} label={t('settings.anki')} id="anki-settings" />
-                <Tab tabIndex={1} label={t('settings.mining')} id="mining-settings" />
-                <Tab tabIndex={2} label={t('settings.subtitleAppearance')} id="subtitle-appearance" />
-                <Tab tabIndex={3} label={t('settings.keyboardShortcuts')} id="keyboard-shortcuts" />
+                <Tab tabIndex={1} label={t('settings.tokenizer')} id="tokenizer" />
+                <Tab tabIndex={2} label={t('settings.mining')} id="mining-settings" />
+                <Tab tabIndex={3} label={t('settings.subtitleAppearance')} id="subtitle-appearance" />
+                <Tab tabIndex={4} label={t('settings.keyboardShortcuts')} id="keyboard-shortcuts" />
                 {extensionSupportsAppIntegration && (
-                    <Tab tabIndex={4} label={t('settings.streamingVideo')} id="streaming-video" />
+                    <Tab tabIndex={5} label={t('settings.streamingVideo')} id="streaming-video" />
                 )}
-                <Tab tabIndex={5} label={t('settings.misc')} id="misc-settings" />
-                <Tab tabIndex={6} label={t('about.title')} id="about" />
+                <Tab tabIndex={6} label={t('settings.misc')} id="misc-settings" />
+                <Tab tabIndex={7} label={t('about.title')} id="about" />
             </Tabs>
             <TabPanel value={tabIndex} index={tabIndicesById['anki-settings']}>
                 <FormGroup className={classes.formGroup}>
@@ -1423,6 +1472,34 @@ export default function SettingsForm({
                         onTagsChange={(tags) => handleSettingChanged('tags', tags)}
                     />
                 </FormGroup>
+            </TabPanel>
+            <TabPanel value={tabIndex} index={tabIndicesById['tokenizer']}>
+                <h1>tokenizer</h1>
+                
+                <input 
+                    type='file' 
+                    ref={inputDictionnaryRef}
+                    accept=".json"
+                />
+                <Button color="secondary" variant="contained" onClick={loadDictionnary}>
+                    Load Dictionnary 
+                </Button>
+
+                <h3>test tokenizer</h3>
+                <TextField
+                    variant="filled"
+                    color="secondary"
+                    multiline
+                    fullWidth
+                    maxRows={8}
+                    label="Japanese tokenizer"
+                    value={textToTokenize}
+                    onChange={handleTextToTokenizeChange}
+                />
+                <Button color="secondary" variant="contained" onClick={tokenize}>
+                    Tokenize
+                </Button>
+                <h4>{tokenizedText}</h4>
             </TabPanel>
             <TabPanel value={tabIndex} index={tabIndicesById['mining-settings']}>
                 <FormLabel className={classes.top} component="legend">

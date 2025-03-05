@@ -139,6 +139,20 @@ window.addEventListener('message', async (event) => {
                     response: await chrome.runtime.sendMessage(command),
                 });
                 break;
+            case 'add-dictionnary-to-tokenizer':
+                sendMessageToPlayer({
+                    messageId: command.message.messageId,
+                    response: await chrome.runtime.sendMessage(command),
+                });
+                break;
+            case 'tokenize-text':
+                const tokenizeTextResponse = await chrome.runtime.sendMessage(command);
+                console.log(tokenizeTextResponse);
+                sendMessageToPlayer({
+                    messageId: command.message.messageId,
+                    response: tokenizeTextResponse,
+                });
+                break;
             default:
                 chrome.runtime.sendMessage(command);
                 break;

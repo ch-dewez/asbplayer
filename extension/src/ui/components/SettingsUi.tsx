@@ -86,6 +86,7 @@ const SettingsUi = () => {
                     <DialogContent className={classes.content}>
                         <SettingsForm
                             anki={anki}
+                            extension={undefined}
                             extensionInstalled
                             extensionVersion={chrome.runtime.getManifest().version}
                             extensionSupportsAppIntegration

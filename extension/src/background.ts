@@ -64,6 +64,8 @@ import AddAnnotationsHandler from './handlers/asbplayerv2/add-annotations-handle
 import SetWordAnnotationWithSubtitlesHandler from './handlers/asbplayerv2/set-word-annotation-handler';
 import AddAnnotationsToStringArrayHandler from './handlers/webParser/add-annotations-to-string-array-handler';
 import SetWordAnnotationWithAnnotationsArrayArrayHandler from './handlers/webParser/set-word-annotation-with-annotations-array-array-handler';
+import AddDictionnaryToTokenizerHandler from './handlers/tokenizer/AddDictionnaryToTokenizerHandler';
+import tokenizerTextHandler from './handlers/tokenizer/tokenizeTextHandler';
 
 if (!isFirefoxBuild) {
     chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' });
@@ -123,6 +125,13 @@ const imageCapturer = new ImageCapturer(settings);
 const cardPublisher = new CardPublisher(settings);
 
 const handlers: CommandHandler[] = [
+    // put new handler on top if command not null
+    new AddAnnotationsHandler(settings),
+    new SetWordAnnotationWithSubtitlesHandler(),
+    new AddAnnotationsToStringArrayHandler(settings),
+    new SetWordAnnotationWithAnnotationsArrayArrayHandler(),
+    new AddDictionnaryToTokenizerHandler(),
+    new tokenizerTextHandler(),
     new VideoHeartbeatHandler(tabRegistry),
     new RecordMediaHandler(audioRecorder, imageCapturer, cardPublisher, settings),
     new RerecordMediaHandler(settings, audioRecorder, cardPublisher),
@@ -161,10 +170,7 @@ const handlers: CommandHandler[] = [
     new RequestModelHandler(),
     new CurrentTabHandler(),
     new MobileOverlayForwarderHandler(),
-    new AddAnnotationsHandler(settings),
-    new SetWordAnnotationWithSubtitlesHandler(),
-    new AddAnnotationsToStringArrayHandler(settings),
-    new SetWordAnnotationWithAnnotationsArrayArrayHandler(),
+    // put new handler on top if command not null
 ];
 
 chrome.runtime.onMessage.addListener((request: Command<Message>, sender, sendResponse) => {
@@ -173,6 +179,7 @@ chrome.runtime.onMessage.addListener((request: Command<Message>, sender, sendRes
             (typeof handler.sender === 'string' && handler.sender === request.sender) ||
             (typeof handler.sender === 'object' && handler.sender.includes(request.sender))
         ) {
+            // god I hate this f*cking null condition
             if (handler.command === null || handler.command === request.message.command) {
                 let handlerResult = handler.handle(request, sender, sendResponse);
                 if (handlerResult) {

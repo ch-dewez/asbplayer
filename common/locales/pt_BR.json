@@ -277,6 +277,7 @@
         "addCustomField": "Adicionar campo customizado",
         "alwaysPlayOnSubtitleRepeat": "Sempre reproduzir depois de invocar 'Vai para o início da legenda atual'",
         "anki": "Anki",
+        "tokenizer": "Tokenizer",
         "ankiConnectUrl": "URL do Anki Connect",
         "audioField": "Campo de áudio",
         "audioPaddingEnd": "Fim do preenchimento de áudio",

@@ -92,6 +92,7 @@
         "activeTabPermissionRequest.prompt": "Click on the asbplayer action button in the top-right of the browser window to enable audio recording for this tab.",
         "activeTabPermissionRequest.grantedPrompt": "Audio recording has been enabled for this tab. You can now begin mining.",
         "audioCaptureFailed.message": "DRM-protected audio cannot be captured on the Firefox version of asbplayer.",
+        "settings.tokenizer": "Tokenizer",
         "settings.addCustomCss": "Add Custom CSS",
         "settings.alwaysPlayOnSubtitleRepeat": "Always play after invoking 'Seek to beginning of current/previous subtitle'",
         "settings.fastForwardModePlaybackRate": "Fast-forward Mode Playback Rate",

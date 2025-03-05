@@ -277,6 +277,7 @@
         "addCustomField": "添加自定义字段",
         "alwaysPlayOnSubtitleRepeat": "Always play after invoking 'Seek to beginning of current/previous subtitle'",
         "anki": "Anki",
+        "tokenizer": "Tokenizer",
         "ankiConnectUrl": "Anki连接URL",
         "audioField": "音频字段",
         "audioPaddingEnd": "音频填充结束",

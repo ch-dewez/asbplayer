@@ -277,6 +277,7 @@
         "addCustomField": "Dodaj niestandardowe pole",
         "alwaysPlayOnSubtitleRepeat": "Zawsze kontynuuj odtwarzanie po uruchomieniu 'Przewiń do początku obecnych/poprzednich napisów'",
         "anki": "Anki",
+        "tokenizer": "Tokenizer",
         "ankiConnectUrl": "URL Anki Connect",
         "audioField": "Pole na audio",
         "audioPaddingEnd": "Padding audio z końca",

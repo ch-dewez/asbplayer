@@ -30,7 +30,8 @@
         "settings.webSocketClientEnabled": "Enable WebSocket client",
         "settings.webSocketServerUrl": "WebSocket Server URL",
         "settings.firefoxExtensionShortcutHelp": "Edit this shortcut from the Plugin manager at about:addons.",
-        "settings.postMinePlayback": "Post-mining playback state"
+        "settings.postMinePlayback": "Post-mining playback state",
+        "settings.tokenizer": "Tokenizer"
     },
     "extension": {},
     "external": {}

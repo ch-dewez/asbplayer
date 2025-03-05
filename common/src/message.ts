@@ -150,6 +150,21 @@ export interface PublishCardMessage extends Message, CardModel {
     readonly command: 'publish-card';
 }
 
+export interface TokenizeTextMessage extends Message {
+    readonly command: 'tokenize-text';
+    readonly text: string;
+}
+
+export interface TokenizeTextMessageFromApp extends MessageWithId {
+    readonly command: 'tokenize-text';
+    readonly text: string;
+}
+
+export interface AddDictionnaryToTokenizerMessage extends Message {
+    readonly command: 'add-dictionnary-to-tokenizer';
+    readonly text: string;
+}
+
 export interface AddAnnotationsMessage extends Message {
     readonly command: 'add-annotations';
     readonly subtitles: SubtitleModel[];

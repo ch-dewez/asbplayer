@@ -35,6 +35,9 @@ import {
     setWordAndSubtitlesMessageFromApp,
     AnnotationType,
     Annotation,
+    AddDictionnaryToTokenizerMessage,
+    TokenizeTextMessage,
+    TokenizeTextMessageFromApp,
 } from '@project/common';
 import { AsbplayerSettings, Profile } from '@project/common/settings';
 import { GlobalState } from '@project/common/global-state';
@@ -43,6 +46,7 @@ import gte from 'semver/functions/gte';
 import gt from 'semver/functions/gt';
 import { isFirefox } from '../../browser-detection';
 import { isMobile } from 'react-device-detect';
+import { TokenizeWord } from '../../japanese-tokenizer/tokenizer';
 
 export interface ExtensionMessage {
     data: Message;
@@ -543,6 +547,31 @@ export default class ChromeExtension {
         return this._createResponsePromise(messageId);
     }
 
+    loadDictionnaryToTokenizer(dictionnary:string) {
+        const command: Command<AddDictionnaryToTokenizerMessage> = {
+            sender:'asbplayerv2',
+            message: {
+                command: 'add-dictionnary-to-tokenizer',
+                text:dictionnary,
+            }
+        };
+        window.postMessage(command);
+    }
+    
+    tokenizeText(text:string): Promise<TokenizeWord[]> {
+        const messageId = uuidv4();
+        const command: Command<TokenizeTextMessageFromApp> = {
+            sender:'asbplayerv2',
+            message: {
+                command: 'tokenize-text',
+                text: text,
+                messageId,
+            }
+        };
+        window.postMessage(command);
+        return this._createResponsePromise(messageId);
+    }
+
     private _createResponsePromise<T>(messageId: string) {
         return new Promise<T>((resolve, reject) => {
             this._responseResolves[messageId] = resolve;
@@ -551,7 +580,7 @@ export default class ChromeExtension {
                     delete this._responseResolves[messageId];
                     reject('Request timed out');
                 }
-            }, 70000);
+            }, 5000);
         });
     }
 

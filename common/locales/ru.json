@@ -277,6 +277,7 @@
         "addCustomField": "Добавить пользовательское поле",
         "alwaysPlayOnSubtitleRepeat": "Всегда воспроизводить после вызова 'Перемотать к началу текущего/предыдущего субтитра'",
         "anki": "Анки",
+        "tokenizer": "Tokenizer",
         "ankiConnectUrl": "URL Anki Connect",
         "audioField": "Поле аудио",
         "audioPaddingEnd": "Конец аудио отступа",

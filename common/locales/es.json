@@ -277,6 +277,7 @@
         "addCustomField": "Agregar Campo Personalizado",
         "alwaysPlayOnSubtitleRepeat": "Siempre reproducir luego de invocar \"Ir al inicio del subtítulo actual/anterior\"",
         "anki": "Anki",
+        "tokenizer": "Tokenizer",
         "ankiConnectUrl": "URL de Anki Connect",
         "audioField": "Campo de Audio",
         "audioPaddingEnd": "Retraso del final de la grabación de audio",

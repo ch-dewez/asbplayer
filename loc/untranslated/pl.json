@@ -1,6 +1,7 @@
 {
     "common": {
-        "action.parsePage": "Parse the Page"
+        "action.parsePage": "Parse the Page",
+        "settings.tokenizer": "Tokenizer"
     },
     "extension": {},
     "external": {}
