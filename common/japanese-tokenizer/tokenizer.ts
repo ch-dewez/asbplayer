@@ -63,9 +63,9 @@
 //     return forms;
 // };
 
-import Dexie from 'dexie';
+import { TrieStorage } from './trie-storage';
 
-class TrieRoot {
+export class TrieRoot {
     childrens: TrieElement[] = []
     
     public containsString(text:string):boolean{
@@ -81,28 +81,28 @@ class TrieRoot {
     }
 }
 
-class TrieElement {
+export class TrieElement {
     childrens: TrieElement[] = []
     isAWordEnd: boolean = false
     character: string = ""
     word: Word | undefined = undefined
 }
 
-class Word{
-    readonly definition: string[]
+export class Word{
+    readonly definitions: string[]
     readonly tags: string[]
     readonly frequencyScore: number
     readonly frequencyPosition: number
 
-    constructor(definition:string[], tags:string[], frequencyScore:number, frequencyPosition:number){
-        this.definition = definition;
+    constructor(definitions:string[], tags:string[], frequencyScore:number, frequencyPosition:number){
+        this.definitions = definitions;
         this.tags = tags;
         this.frequencyScore = frequencyScore;
         this.frequencyPosition = frequencyPosition;
     }
 }
 
-class Suffixes {
+export class Suffixes {
     suffixeTypeTag: string = ""
     basicFormSuffixe:string = ""
     suffixesTrie: TrieRoot 
@@ -117,20 +117,18 @@ class Suffixes {
 export class TokenizeWord {
     readonly basic_form: string = ""
     readonly surface_form: string = ""
-    readonly definition: string[] = []
+    readonly definitions: string[] = []
 }
 
 
 type RecursionReturnType = {error: {hitError:boolean, errorDepth:number, globalError:boolean}, tokenizeWords:TokenizeWord[]};
 
-type importedWordType = [definition:string[], tags: string[], frequencyScore:number, frequencyPosition:number]
-type importedTrieRootArrayType = [childrens:importedTrieElementArrayType[]];
-type importedTrieElementArrayType = [childrens:importedTrieElementArrayType[], isAWordEnd: boolean, character:string, word:importedWordType];
-type importedConjugationSuffixesType = [suffixeTypeTag:string, suffixes:[basicFormSuffixe:string, suffixesTrie:importedTrieRootArrayType]];
+export type importedWordType = [definitions:string[], tags: string[], frequencyScore:number, frequencyPosition:number]
+export type importedTrieRootArrayType = [childrens:importedTrieElementArrayType[]];
+export type importedTrieElementArrayType = [childrens:importedTrieElementArrayType[], isAWordEnd: boolean, character:string, word:importedWordType];
+export type importedConjugationSuffixesType = [suffixeTypeTag:string, suffixes:[basicFormSuffixe:string, suffixesTrie:importedTrieRootArrayType]];
 
-export class Tokenizer {
-    private static trie: TrieRoot | undefined;
-    private static conjugationSuffixes: Suffixes[] | undefined;
+export class Tokenizer extends TrieStorage {
 
     private static maxBackTracingDepth: number = 5;
     private static maxBackTracingDepthForUnknownWords: number = 2; // if there is an unknown i'll consider if there's two known words after it that it's not a problem from that.
@@ -141,71 +139,6 @@ export class Tokenizer {
     private static lengthExponent: number = 0.6;      // Now between 0 and 1 (0.6 means 60% frequency, 40% length)
     private static idealWordLength: number = 3;
 
-    private static createWordFromArray(array: importedWordType): Word|undefined {
-        if (array === null || array === undefined){
-            return undefined;
-        }
-        let word:Word = new Word(
-            array[0] ?? [],
-            array[1] ?? [],
-            array[2] ?? 0,
-            array[3] ?? -1,
-        );
-        return word;
-    }
-
-    private static populateTrieFromArray(element: importedTrieRootArrayType | importedTrieElementArrayType): TrieRoot {
-        let trie = new TrieRoot();
-
-        for (const child of element[0]) {
-            // create the new Elememnt
-            let newElement = new TrieElement();
-            newElement.isAWordEnd = child[1];
-            newElement.character = child[2];
-            if (child[3] !== null && child[3] !== undefined) {
-                newElement.word = Tokenizer.createWordFromArray(child[3]);
-            }
-            newElement.childrens = Tokenizer.populateTrieFromArray(child).childrens;
-            trie.childrens.push(newElement);
-        }
-
-        return trie;
-    }
-
-    private static populateConjugationSuffixesFromArray(element: importedConjugationSuffixesType[]): Suffixes[] {
-        let allSuffixes: Suffixes[] = [];
-
-        for (const child of element) {
-            const suffixes: Suffixes = new Suffixes(child[0], child[1][0], Tokenizer.populateTrieFromArray(child[1][1]));
-            allSuffixes.push(suffixes);
-        }
-
-        return allSuffixes;
-    }
-
-    private static saveDictionnaryToIndexedDb() {
-        
-    }
-
-    private static loadDictionnaryFromIndexedDb(){
-        
-    }
-
-    public static loadDictionnaryFromJson(dictionnary:[trie: importedTrieRootArrayType, conjugationSuffixes:importedConjugationSuffixesType[]]) {
-        Tokenizer.trie = Tokenizer.populateTrieFromArray(dictionnary[0]);
-        Tokenizer.conjugationSuffixes = Tokenizer.populateConjugationSuffixesFromArray(dictionnary[1]);
-    }
-
-    public static async loadDictionnaryFromFile(file: File) {
-        const text = await file.text();
-        const parseJson = JSON.parse(text) as [trie: importedTrieRootArrayType, conjugationSuffixes:importedConjugationSuffixesType[]];
-        Tokenizer.loadDictionnaryFromJson(parseJson)
-    }
-    
-    public static loadDictionnaryFromString(text: string) {
-        const parseJson = JSON.parse(text) as [trie: importedTrieRootArrayType, conjugationSuffixes:importedConjugationSuffixesType[]];
-        Tokenizer.loadDictionnaryFromJson(parseJson)
-    }
 
     private static scoreWord(word: Word, wordText: string): number {
         if (!word) return 0;
@@ -478,57 +411,9 @@ export class Tokenizer {
         const basic_form = wordText + (verbSuffixes !== undefined ? verbSuffixes.basicFormSuffixe : '');
         let tokenizeWord: TokenizeWord = {
             basic_form,
-            definition: word ? word.definition : [],
+            definitions: word ? word.definitions : [],
             surface_form: wordText,
         };
         return tokenizeWord;
     }
 }
-
-// Define your database
-// class TrieDatabase extends Dexie {
-//     japaneseTrieTable!: Dexie.Table<{id: string, trie: TrieRoot}, string>;
-
-//     constructor() {
-//         super('JapaneseTrieDB');
-//         this.version(1).stores({
-//             japaneseTrieTable: 'id' // 'id' is the primary key
-//         });
-//     }
-// }
-
-// Create database instance
-// const db = new TrieDatabase();
-
-// async function createTrieFromDictionnaryFile(dictionaryFile: File): Promise<TrieRoot> {
-//     try {
-//         // Read the file content
-//         const text = await dictionaryFile.text();
-//         const dictionary = JSON.parse(text); // If it's JSON, or parse according to your file format
-
-//         // Your trie computation logic here using the loaded dictionary
-//         const computedTrie: TrieRoot = {
-//             childrens: [] // Your computation logic using dictionary data
-//         };
-
-//         // Save computed trie to database
-//         await db.japaneseTrieTable.put({
-//             id: 'main-trie',
-//             trie: computedTrie
-//         });
-
-//         return computedTrie;
-//     } catch (error) {
-//         console.error('Error creating trie from dictionary:', error);
-//         throw error;
-//     }
-// }
-
-
-// // Function to load the trie
-// async function loadTrie(): Promise<TrieRoot | undefined> {
-//     const result = await db.japaneseTrieTable.get('main-trie');
-//     return result?.trie;
-// }
-
-

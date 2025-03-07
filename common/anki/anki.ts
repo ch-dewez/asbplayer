@@ -169,7 +169,7 @@ export async function addAnnotationsToStringArray(texts: string[], ankiSettings:
     let results: { text: string; annotations: Annotation[] }[] = [];
     for (const text of texts) {
         let result: { text: string; annotations: Annotation[] } = { text, annotations: [] };
-        let forms = Tokenizer.tokenizeText(text);
+        let forms = await Tokenizer.tokenizeText(text);
         if (forms.length === 0 && text.trim() !== ""){
             return texts
         }
@@ -316,7 +316,7 @@ export async function addAnnotationsToSubtitle(
 
     // add the annotations
     // so we need to separate words
-    let forms = Tokenizer.tokenizeText(subtitle.text);
+    let forms = await Tokenizer.tokenizeText(subtitle.text);
     if (forms.length === 0 && subtitle.text.trim() !== '') {
         return subtitle;
     }
@@ -518,7 +518,7 @@ export async function findKnownWordsInText(
     text: string,
     ankiSettings: AnkiSettings | Promise<AnkiSettings>
 ): Promise<{ word: string; annotationType: AnnotationType; ankiAnnotationType: AnnotationType }[]> {
-    let segmentedText = Tokenizer.tokenizeText(text);
+    let segmentedText = await Tokenizer.tokenizeText(text);
     if (segmentedText.length === 0 && text.trim() !== '') {
         throw new Error("Can't tokenize text");
     }

@@ -14,7 +14,7 @@ export default class AddDictionnaryToTokenizerHandler implements CommandHandler 
     ): boolean {
         const { text } = command.message as AddDictionnaryToTokenizerMessage;
 
-        Tokenizer.loadDictionnaryFromString(text);
+        Tokenizer.CreateDictionnaryFromString(text);
         console.log("dictionnary set");
 
         return false;

@@ -13,11 +13,12 @@ export default class tokenizerTextHandler implements CommandHandler {
     ): boolean {
         const { text } = command.message as TokenizeTextMessage;
 
-        let result = Tokenizer.tokenizeText(text);
-        console.log(result);
+        Tokenizer.tokenizeText(text)
+        .then((result) => {
+            console.log(result);
+            sendResponse(result);
+        });
 
-        sendResponse(result);
-
-        return false;
+        return true;
     }
 }
