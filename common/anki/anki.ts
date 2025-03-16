@@ -418,7 +418,7 @@ export async function findKnownWordsInText(
 
     let actions: any = [];
     for (const word of basic_form) {
-        actions.push(anki.createFindNotesActionsWithBoth(word));
+        actions.push(anki.createFindCardActionsWithBoth(word));
     }
 
     let cards: { word: string; id: number }[] = [];
@@ -454,7 +454,15 @@ export async function findKnownWordsInText(
     //return negative when seconds and positive if days so if we do > than 1 that will work
 
     let cardIds = cards.filter((card) => card.id !== undefined).map((card) => card.id);
-    let intervals: number[] = await anki.getInterval(cardIds);
+    
+    const chunkSize = 1; // Adjust this value based on Anki's limitations
+    let intervals: number[] = [];
+    
+    for (let i = 0; i < cardIds.length; i += chunkSize) {
+        const chunk = cardIds.slice(i, i + chunkSize);
+        const chunkIntervals = await anki.getInterval(chunk);
+        intervals = intervals.concat(chunkIntervals);
+    }
     // we need to check if the unknownWords we saved are still unknown
     let unknownIntervals: number[] = await anki.getInterval(unknownWordsInText.map((e) => e.id));
 
@@ -551,25 +559,25 @@ export class Anki {
         return response.result;
     }
 
-    createFindNotesActions(word: string, version?: number) {
+    createFindCardActions(word: string, version?: number) {
         return {
-            action: 'findNotes',
+            action: 'findCards',
             params: { query: '*:' + this._escapeQuery(word) }, // *: = any field with exactly word
             version: version ? version : 6,
         };
     }
 
-    createFindNotesActionsWithHtml(word: string, version?: number) {
+    createFindCardActionsWithHtml(word: string, version?: number) {
         return {
-            action: 'findNotes',
+            action: 'findCards',
             params: { query: '*:' + '*>' + this._escapeQuery(word) + '<*' }, //*: = any field with * = anything before >word< * = anything after
             version: version ? version : 6,
         };
     }
 
-    createFindNotesActionsWithBoth(word: string, version?: number) {
+    createFindCardActionsWithBoth(word: string, version?: number) {
         return {
-            action: 'findNotes',
+            action: 'findCards',
             params: {
                 query: '*:' + '*>' + this._escapeQuery(word) + '<*' + ' OR ' + '*:' + this._escapeQuery(word),
             }, // both combine with OR
