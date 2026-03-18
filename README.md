@@ -1,3 +1,7 @@
+# A fork of asbplayer
+It was a long time ago, I don't remember well.
+Each time you load subtitles, it will fetch the intervel in anki and highlight the known and unknown words. (This feature has now been added to the original asbplayer). You can also parse web pages. I don't remember if in this version it is using my own tokenizer (bad) or a library (good).
+
 <p align="center">
     <img src="https://raw.githubusercontent.com/killergerbah/asbplayer/main/extension/src/assets/icon128.png" width="75" height="75" style="border-radius: 16px" alt="asbplayer" />
 </p>
